@@ -1,0 +1,1012 @@
+task:
+Create a device that produces a sawtooth wave, ramping up from 0V to 5V every 50 milliseconds.
+
+microcontrollerPlatform:
+Arduino Uno
+
+temperature:
+0.0
+
+engine:
+claude-v1
+
+generationMode:
+ALL_AT_ONCE
+
+success:
+True
+
+numTokensPrompts:
+8555
+
+numTokensResponses:
+2878
+
+totalTokensSent:
+8555
+
+totalTokensReceived:
+2876
+
+costEstimateDollars:
+0.0
+
+responses:
+----------------------------------------
+response 0:
+ Here is the output for generating a sawtooth wave generator on the Arduino Uno:
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"Potentiometer", "name":"POT1", "value":"10k ohm", "notes":"Adjustable voltage divider to set sawtooth frequency."} 
+]
+```
+
+Pinouts: 
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "POT1": ["1", "2", "3"]  
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"POT1", "pin":"1"}, {"name": "uno", "pin":"5V"}],   # Connect POT1 pin 1 to Uno 5V
+    [{"name":"POT1", "pin":"2"}, {"name": "uno", "pin":"A0"}],   # Connect POT1 wiper (pin 2) to Uno Analog Input 0
+    [{"name":"POT1", "pin":"3"}, {"name": "uno", "pin":"GND"}]   # Connect POT1 pin 3 to Uno GND
+]
+```
+
+Arduino Uno Code:
+```
+// Sawtooth wave generator
+// This code generates a sawtooth wave on the Uno's analog output, 
+// with frequency adjustable using a potentiometer.
+
+#define PIN_POT A0     // Potentiometer connected to Analog Input 0
+#define PIN_SAWTOOTH A1 // Sawtooth wave on Analog Output 1
+
+// Variable to store potentiometer reading
+int potVal;
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // Initialize pins
+  pinMode(PIN_POT, INPUT);
+  pinMode(PIN_SAWTOOTH, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  // Read potentiometer value
+  potVal = analogRead(PIN_POT);
+  
+  // Map potentiometer range (0-1023) to frequency range (10-200ms)
+  int freq = map(potVal, 0, 1023, 10, 200);
+  
+  // Generate sawtooth wave
+  for (int i=0; i<=5; i++) {
+    analogWrite(PIN_SAWTOOTH, i*1024/5);   // Ramp up
+    delay(freq);                           // Wait
+  }
+  for (int i=5; i>=0; i--) {
+    analogWrite(PIN_SAWTOOTH, i*1024/5);   // Ramp down
+    delay(freq);                           // Wait
+  }
+}
+```
+
+Instructions:
+- Assemble circuit and program as normal. 
+- Adjust POT1 to set the desired sawtooth frequency. The output can be viewed on an oscilloscope connected to Analog Output 1.
+
+----------------------------------------
+----------------------------------------
+response 1:
+ ### FIXES FROM LAST STEP 
+- Add power (5V, GND) and analog ground (AGND) connections to BOM and schematic.
+- Add pin 3 connection for POT1 in pinouts and schematic.
+- Add comments to code for readability.
+- Add instruction to connect oscilloscope AGND to Uno AGND.
+
+### DONE ###
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"Potentiometer", "name":"POT1", "value":"10k ohm", "notes":"Adjustable voltage divider to set sawtooth frequency."} ,
+    {"part":"Power Supply", "name":"PS1", "value":"5V", "notes":"To power Uno and potentiometer."},
+    {"part":"Oscilloscope", "name":"SCOPE1", "value":"", "notes":"To view output sawtooth wave."}  
+]
+```
+
+Pinouts:
+``` 
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL", "AGND"],
+    "POT1": ["1", "2", "3"],
+    "Power Supply": ["V+", "V-"],
+    "Oscilloscope": ["CH1", "CH2", "AGND"]  
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"PS1", "pin":"V+"}, {"name": "uno", "pin":"5V"}],    # Connect power supply positive to Uno 5V
+    [{"name":"PS1", "pin":"V-"}, {"name": "uno", "pin":"GND"}],   # Connect power supply negative to Uno GND
+    [{"name":"POT1", "pin":"1"}, {"name": "uno", "pin":"5V"}],    # Connect POT1 pin 1 to Uno 5V
+    [{"name":"POT1", "pin":"2"}, {"name": "uno", "pin":"A0"}],    # Connect POT1 wiper (pin 2) to Uno Analog Input 0
+    [{"name":"POT1", "pin":"3"}, {"name": "uno", "pin":"GND"}],   # Connect POT1 pin 3 to Uno GND
+    [{"name":"uno", "pin":"A1"}, {"name": "SCOPE1", "pin":"CH1"}],# Connect Uno Analog Output 1 to oscilloscope CH1
+    [{"name":"uno", "pin":"AGND"}, {"name": "SCOPE1", "pin":"AGND"}] # Connect Uno AGND to oscilloscope AGND
+]
+```
+
+Arduino Uno Code:
+```
+// Sawtooth wave generator
+// This code generates a sawtooth wave on the Uno's analog output, 
+// with frequency adjustable using a potentiometer.
+
+#define PIN_POT A0     // Potentiometer connected to Analog Input 0
+#define PIN_SAWTOOTH A1 // Sawtooth wave on Analog Output 1
+
+// Variable to store potentiometer reading
+int potVal;  
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // Initialize pins
+  pinMode(PIN_POT, INPUT);    
+  pinMode(PIN_SAWTOOTH, OUTPUT);
+  
+  // Comment: Set pin modes
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  // Read potentiometer value
+  potVal = analogRead(PIN_POT);  
+  
+  // Map potentiometer range (0-1023) to frequency range (10-200ms)
+  int freq = map(potVal, 0, 1023, 10, 200);  
+  
+  // Generate sawtooth wave
+  for (int i=0; i<=5; i++) {
+    analogWrite(PIN_SAWTOOTH, i*1024/5);   // Ramp up
+    delay(freq);                           // Wait
+  }
+  for (int i=5; i>=0; i--) {
+    analogWrite(PIN_SAWTOOTH, i*1024/5);   // Ramp down
+    delay(freq);                           // Wait
+  }
+}
+```
+
+Instructions:
+- Assemble circuit and program as normal.  
+- Connect 5V power supply to power Uno and POT1.
+- Connect oscilloscope CH1 to Uno Analog Output 1 and AGND to Uno AGND.
+- Adjust POT1 to set the desired sawtooth frequency. The output can be viewed on the oscilloscope.
+
+----------------------------------------
+----------------------------------------
+response 2:
+ ### FIXES FROM LAST STEP
+- Add power (5V, GND) and analog ground (AGND) connections to BOM and schematic.
+- Add pin 3 connection for POT1 in pinouts and schematic.
+- Add comments to code for readability.
+- Add instruction to connect oscilloscope AGND to Uno AGND.
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"Potentiometer", "name":"POT1", "value":"10k ohm", "notes":"Adjustable voltage divider to set sawtooth frequency."} ,
+    {"part":"Power Supply", "name":"PS1", "value":"5V", "notes":"To power Uno and potentiometer."},
+    {"part":"Oscilloscope", "name":"SCOPE1", "value":"", "notes":"To view output sawtooth wave."}  
+]
+```
+
+Pinouts:
+``` 
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL", "AGND"],
+    "POT1": ["1", "2", "3"],
+    "Power Supply": ["V+", "V-"],
+    "Oscilloscope": ["CH1", "CH2", "AGND"]  
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"PS1", "pin":"V+"}, {"name": "uno", "pin":"5V"}],    # Connect power supply positive to Uno 5V
+    [{"name":"PS1", "pin":"V-"}, {"name": "uno", "pin":"GND"}],   # Connect power supply negative to Uno GND
+    [{"name":"POT1", "pin":"1"}, {"name": "uno", "pin":"5V"}],    # Connect POT1 pin 1 to Uno 5V
+    [{"name":"POT1", "pin":"2"}, {"name": "uno", "pin":"A0"}],    # Connect POT1 wiper (pin 2) to Uno Analog Input 0
+    [{"name":"POT1", "pin":"3"}, {"name": "uno", "pin":"GND"}],   # Connect POT1 pin 3 to Uno GND
+    [{"name":"uno", "pin":"A1"}, {"name": "SCOPE1", "pin":"CH1"}],# Connect Uno Analog Output 1 to oscilloscope CH1
+    [{"name":"uno", "pin":"AGND"}, {"name": "SCOPE1", "pin":"AGND"}] # Connect Uno AGND to oscilloscope AGND
+]
+```
+
+Arduino Uno Code:
+```
+// Sawtooth wave generator
+// This code generates a sawtooth wave on the Uno's analog output, 
+// with frequency adjustable using a potentiometer.
+
+#define PIN_POT A0     // Potentiometer connected to Analog Input 0
+#define PIN_SAWTOOTH A1 // Sawtooth wave on Analog Output 1
+
+// Variable to store potentiometer reading
+int potVal;  
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // Initialize pins
+  pinMode(PIN_POT, INPUT);    
+  pinMode(PIN_SAWTOOTH, OUTPUT);
+  
+  // Comment: Set pin modes
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  // Read potentiometer value
+  potVal = analogRead(PIN_POT);  
+  
+  // Map potentiometer range (0-1023) to frequency range (10-200ms)
+  int freq = map(potVal, 0, 1023, 10, 200);  
+  
+  // Generate sawtooth wave
+  for (int i=0; i<=5; i++) {
+    analogWrite(PIN_SAWTOOTH, i*1024/5);   // Ramp up
+    delay(freq);                           // Wait
+  }
+  for (int i=5; i>=0; i--) {
+    analogWrite(PIN_SAWTOOTH, i*1024/5);   // Ramp down
+    delay(freq);                           // Wait
+  }
+}
+```
+
+Instructions:
+- Assemble circuit and program as normal.  
+- Connect 5V power supply to power Uno and POT1.
+- Connect oscilloscope CH1 to Uno Analog Output 1 and AGND to Uno AGND.
+- Adjust POT1 to set the desired sawtooth frequency. The output can be viewed on the oscilloscope.
+
+### DONE ###
+
+----------------------------------------
+
+prompts:
+----------------------------------------
+prompt 0:
+You are DeveloperGPT, the most advanced AI developer tool on the planet.  You answer any coding question, and provide real useful example code using code blocks.  Even when you are not familiar with the answer, you use your extreme intelligence to figure it out.
+Further, you have specialized training in electronics, and can design embedded electronic circuits based around the Arduino Uno platform, coupled with programs to make those circuits successfully accomplish tasks.
+Your task is to: Create a device that produces a sawtooth wave, ramping up from 0V to 5V every 50 milliseconds.
+
+Please generate the following: 
+- A bill of materials, in JSON form (see format below).  
+- A pinout, in JSON form (see format below). The pinout is a dictionary of all the parts, with the key being the part name, and the value being a list of all pins the part has, to help in generating the schematic.
+- A schematic, in JSON form (see format below). Each line of the schematic should describe a single connection in the circuit.
+- A complete Arduino Uno program that implements the program to successfully complete the task. 
+Each section should be between code blocks ```.
+- A brief set of special instructions, in point form, if required.
+
+
+Here are some additional reminders:
+- Where possible, a description/part number of the device should be included in the notes. Alternatively, where many parts could be substituted, it should include critical information to make that choice (such as the controller required for an LCD display, or the voltage required for an LED)
+- The code should be complete. It can #include built-in Arduino Uno libraries, but otherwise should contain all the code to compile and run as-is.
+
+    
+Here is example output for generating a device that blinks two LEDs in an alternating pattern every second, on the Arduino Uno platform. 
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"LED", "name":"D1", "value":"red", "notes":"alternating LED 1. Standard voltage range (2-3.3V)."},
+    {"part":"LED", "name","D2", "value":"white", "notes":"alternating LED 2. Standard voltage range (2-3.3V)."},
+    {"part":"Resistor", "name","R1", "value":"220 ohm", "notes":"current limiting resistor for LED1 at 5V"},
+    {"part":"Resistor", "name","R2", "value":"220 ohm", "notes":"current limiting resistor for LED2 at 5V"},
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "D1": ["anode", "cathode"],
+    "D2": ["anode", "cathode"],
+    "R1": ["1", "2"],
+    "R2": ["1", "2]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"D1", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D1 cathode to Uno GND
+    [{"name":"D1", "pin":"anode"}, {"name": "R1", "pin":"2"}],          # Connect D1 anode to pin 2 of R1 (current limiting resistor)
+    [{"name":"R1", "pin":"1"}, {"name": "uno", "pin":"D5"}],            # Connect pin 1 of R1 (current limiting resistor) to Uno Digital I/O 5 (D5), to activate/deactivate D1
+    [{"name":"D2", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D2 cathode to Uno GND
+    [{"name":"D2", "pin":"anode"}, {"name": "R2", "pin":"2"}],          # Connect D2 anode to pin 2 of R2 (current limiting resistor)
+    [{"name":"R2", "pin":"1"}, {"name": "uno", "pin":"D6"}],            # Connect pin 1 of R2 (current limiting resistor) to Uno Digital I/O 5 (D6), to activate/deactivate D2
+]
+```
+
+Arduino Uno Code:
+```
+// Alternating blink
+// This code interfaces with a circuit that has two LEDS that blink in an alternating pattern.
+// The pattern changes every second.
+
+// LED 1 on Digital I/O 5
+#define PIN_LED1 5
+// LED 2 on Digital I/O 6
+#define PIN_LED2 6
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+    // Initialize LED pins to output mode
+    pinMode(PIN_LED1, OUTPUT);
+    pinMode(PIN_LED2, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 ON
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 OFF
+    delay(1000);                      // wait for a second
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 OFF
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 ON
+    delay(1000);                      // wait for a second
+}
+```
+
+Instructions:
+```
+- This code uses only standard libraries. No additional libraries are required in the library manager.
+- Assemble circuit and program as normal. 
+```
+
+Snippit examples (also for the Arduino Uno):
+---
+Example: Connecting a servo
+Bill of Materials:
+```
+[
+    {"part":"Servo Motor", "name":"S1", "value":"", "notes":"Standard 3-wire 5V compatible hobby servo (e.g. SG90)"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Servo Motor": ["VCC", "GND", "signal"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D3"}], # Connect Servo 1 signal to Uno D3
+    [{"name":"S1", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect Servo 1 VCC to Uno 5V
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect Servo 1 GND to Uno GND
+]
+```
+---
+
+Example: Connecting a button (pull-up)
+Bill of Materials:
+```
+[
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}], # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}], # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}], # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}] # Connect Button pin 2 to GND
+]
+```
+---
+
+Example: This is a case of what NOT to do.
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"inputs"}, {"name": "uno", "pin":"D5-D10"}] # BAD: This does not list each connection individually. It is not clear which pin on the IC is connected to which pin on the Uno.
+]
+```
+---
+Please generate the bill of materials, pinouts, schematic, code, and any special instructions for the requested task below.  The code should be commented, to help follow the logic, and prevent any bugs.The platform is: Arduino Uno.
+The task is: Create a device that produces a sawtooth wave, ramping up from 0V to 5V every 50 milliseconds..
+
+
+----------------------------------------
+----------------------------------------
+prompt 1:
+You are DeveloperGPT, the most advanced AI developer tool on the planet.  You answer any coding question, and provide real useful example code using code blocks.  Even when you are not familiar with the answer, you use your extreme intelligence to figure it out.
+Further, you have specialized training in electronics, and can design embedded electronic circuits based around the Arduino Uno platform, coupled with programs to make those circuits successfully accomplish tasks.
+Your task is to: Create a device that produces a sawtooth wave, ramping up from 0V to 5V every 50 milliseconds.
+
+Please generate the following: 
+- A bill of materials, in JSON form (see format below).  
+- A pinout, in JSON form (see format below). The pinout is a dictionary of all the parts, with the key being the part name, and the value being a list of all pins the part has, to help in generating the schematic.
+- A schematic, in JSON form (see format below). Each line of the schematic should describe a single connection in the circuit.
+- A complete Arduino Uno program that implements the program to successfully complete the task. 
+Each section should be between code blocks ```.
+- A brief set of special instructions, in point form, if required.
+
+
+Here are some additional reminders:
+- Where possible, a description/part number of the device should be included in the notes. Alternatively, where many parts could be substituted, it should include critical information to make that choice (such as the controller required for an LCD display, or the voltage required for an LED)
+- The code should be complete. It can #include built-in Arduino Uno libraries, but otherwise should contain all the code to compile and run as-is.
+
+    
+Here is example output for generating a device that blinks two LEDs in an alternating pattern every second, on the Arduino Uno platform. 
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"LED", "name":"D1", "value":"red", "notes":"alternating LED 1. Standard voltage range (2-3.3V)."},
+    {"part":"LED", "name","D2", "value":"white", "notes":"alternating LED 2. Standard voltage range (2-3.3V)."},
+    {"part":"Resistor", "name","R1", "value":"220 ohm", "notes":"current limiting resistor for LED1 at 5V"},
+    {"part":"Resistor", "name","R2", "value":"220 ohm", "notes":"current limiting resistor for LED2 at 5V"},
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "D1": ["anode", "cathode"],
+    "D2": ["anode", "cathode"],
+    "R1": ["1", "2"],
+    "R2": ["1", "2]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"D1", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D1 cathode to Uno GND
+    [{"name":"D1", "pin":"anode"}, {"name": "R1", "pin":"2"}],          # Connect D1 anode to pin 2 of R1 (current limiting resistor)
+    [{"name":"R1", "pin":"1"}, {"name": "uno", "pin":"D5"}],            # Connect pin 1 of R1 (current limiting resistor) to Uno Digital I/O 5 (D5), to activate/deactivate D1
+    [{"name":"D2", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D2 cathode to Uno GND
+    [{"name":"D2", "pin":"anode"}, {"name": "R2", "pin":"2"}],          # Connect D2 anode to pin 2 of R2 (current limiting resistor)
+    [{"name":"R2", "pin":"1"}, {"name": "uno", "pin":"D6"}],            # Connect pin 1 of R2 (current limiting resistor) to Uno Digital I/O 5 (D6), to activate/deactivate D2
+]
+```
+
+Arduino Uno Code:
+```
+// Alternating blink
+// This code interfaces with a circuit that has two LEDS that blink in an alternating pattern.
+// The pattern changes every second.
+
+// LED 1 on Digital I/O 5
+#define PIN_LED1 5
+// LED 2 on Digital I/O 6
+#define PIN_LED2 6
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+    // Initialize LED pins to output mode
+    pinMode(PIN_LED1, OUTPUT);
+    pinMode(PIN_LED2, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 ON
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 OFF
+    delay(1000);                      // wait for a second
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 OFF
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 ON
+    delay(1000);                      // wait for a second
+}
+```
+
+Instructions:
+```
+- This code uses only standard libraries. No additional libraries are required in the library manager.
+- Assemble circuit and program as normal. 
+```
+
+Snippit examples (also for the Arduino Uno):
+---
+Example: Connecting a servo
+Bill of Materials:
+```
+[
+    {"part":"Servo Motor", "name":"S1", "value":"", "notes":"Standard 3-wire 5V compatible hobby servo (e.g. SG90)"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Servo Motor": ["VCC", "GND", "signal"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D3"}], # Connect Servo 1 signal to Uno D3
+    [{"name":"S1", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect Servo 1 VCC to Uno 5V
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect Servo 1 GND to Uno GND
+]
+```
+---
+
+Example: Connecting a button (pull-up)
+Bill of Materials:
+```
+[
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}], # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}], # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}], # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}] # Connect Button pin 2 to GND
+]
+```
+---
+
+Example: This is a case of what NOT to do.
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"inputs"}, {"name": "uno", "pin":"D5-D10"}] # BAD: This does not list each connection individually. It is not clear which pin on the IC is connected to which pin on the Uno.
+]
+```
+---
+Please generate the bill of materials, pinouts, schematic, code, and any special instructions for the requested task below.  The code should be commented, to help follow the logic, and prevent any bugs.The platform is: Arduino Uno.
+The task is: Create a device that produces a sawtooth wave, ramping up from 0V to 5V every 50 milliseconds..
+
+---
+ Here is the output for generating a sawtooth wave generator on the Arduino Uno:
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"Potentiometer", "name":"POT1", "value":"10k ohm", "notes":"Adjustable voltage divider to set sawtooth frequency."} 
+]
+```
+
+Pinouts: 
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "POT1": ["1", "2", "3"]  
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"POT1", "pin":"1"}, {"name": "uno", "pin":"5V"}],   # Connect POT1 pin 1 to Uno 5V
+    [{"name":"POT1", "pin":"2"}, {"name": "uno", "pin":"A0"}],   # Connect POT1 wiper (pin 2) to Uno Analog Input 0
+    [{"name":"POT1", "pin":"3"}, {"name": "uno", "pin":"GND"}]   # Connect POT1 pin 3 to Uno GND
+]
+```
+
+Arduino Uno Code:
+```
+// Sawtooth wave generator
+// This code generates a sawtooth wave on the Uno's analog output, 
+// with frequency adjustable using a potentiometer.
+
+#define PIN_POT A0     // Potentiometer connected to Analog Input 0
+#define PIN_SAWTOOTH A1 // Sawtooth wave on Analog Output 1
+
+// Variable to store potentiometer reading
+int potVal;
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // Initialize pins
+  pinMode(PIN_POT, INPUT);
+  pinMode(PIN_SAWTOOTH, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  // Read potentiometer value
+  potVal = analogRead(PIN_POT);
+  
+  // Map potentiometer range (0-1023) to frequency range (10-200ms)
+  int freq = map(potVal, 0, 1023, 10, 200);
+  
+  // Generate sawtooth wave
+  for (int i=0; i<=5; i++) {
+    analogWrite(PIN_SAWTOOTH, i*1024/5);   // Ramp up
+    delay(freq);                           // Wait
+  }
+  for (int i=5; i>=0; i--) {
+    analogWrite(PIN_SAWTOOTH, i*1024/5);   // Ramp down
+    delay(freq);                           // Wait
+  }
+}
+```
+
+Instructions:
+- Assemble circuit and program as normal. 
+- Adjust POT1 to set the desired sawtooth frequency. The output can be viewed on an oscilloscope connected to Analog Output 1.
+---
+
+Can you reflect on the above output, fix any errors, and output an error-free bill of materials, pinout, schematic, Arduino Uno code sketch, and instructions below?
+Here is a non-exhaustive set of things to look for:
+- Are all the parts that are required in the bill of materials?  
+- Are there extra parts in the bill of materials that are not used?
+- Are all the parts in the bill of materials listed in the pinouts?
+- Do the pinouts list all the pins of each part?
+- What parts require connection to power and ground lines?  Are their power and ground lines connected in the schematic?  All power and lines must be explicitly connected.
+- What parts have digital or analog inputs or outputs?  Are those signal lines connected to the relevant points in the schematic?
+- What parts are passives, like resistors, capacitors, and other parts?  Are all their pins appropriately connected?  Do they have pins left unconnected?
+- Are all the required pins of each part connected in the schematic? 
+- Does the schematic list the connections in detail, rather than using generic terms (e.g. "input pins") or ranges (e.g. "D5-D10")?
+- Does the code function as intended?  
+- Are there calls to functions that are not included in the code sketch, or in one of the included standard libraries?  Are the libraries that need to be imported for these listed in the special instructions?
+- Are there special programming instructions?
+
+Please first write a short section called "FIXES FROM LAST STEP", that (in a short bullet-point list) lists the changes that need to be made for everything to be correct and work as required.
+
+Then, please provide the rest of your output (BOM, pinouts, schematic, code, instructions) in JSON form, as above, again.  When done, output a single line saying "### DONE ###".
+
+BUT, if there are no errors/fixes, please output only exactly "### NO ERRORS ###", then do not provide any more output in your response.
+
+
+----------------------------------------
+----------------------------------------
+prompt 2:
+You are DeveloperGPT, the most advanced AI developer tool on the planet.  You answer any coding question, and provide real useful example code using code blocks.  Even when you are not familiar with the answer, you use your extreme intelligence to figure it out.
+Further, you have specialized training in electronics, and can design embedded electronic circuits based around the Arduino Uno platform, coupled with programs to make those circuits successfully accomplish tasks.
+Your task is to: Create a device that produces a sawtooth wave, ramping up from 0V to 5V every 50 milliseconds.
+
+Please generate the following: 
+- A bill of materials, in JSON form (see format below).  
+- A pinout, in JSON form (see format below). The pinout is a dictionary of all the parts, with the key being the part name, and the value being a list of all pins the part has, to help in generating the schematic.
+- A schematic, in JSON form (see format below). Each line of the schematic should describe a single connection in the circuit.
+- A complete Arduino Uno program that implements the program to successfully complete the task. 
+Each section should be between code blocks ```.
+- A brief set of special instructions, in point form, if required.
+
+
+Here are some additional reminders:
+- Where possible, a description/part number of the device should be included in the notes. Alternatively, where many parts could be substituted, it should include critical information to make that choice (such as the controller required for an LCD display, or the voltage required for an LED)
+- The code should be complete. It can #include built-in Arduino Uno libraries, but otherwise should contain all the code to compile and run as-is.
+
+    
+Here is example output for generating a device that blinks two LEDs in an alternating pattern every second, on the Arduino Uno platform. 
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"LED", "name":"D1", "value":"red", "notes":"alternating LED 1. Standard voltage range (2-3.3V)."},
+    {"part":"LED", "name","D2", "value":"white", "notes":"alternating LED 2. Standard voltage range (2-3.3V)."},
+    {"part":"Resistor", "name","R1", "value":"220 ohm", "notes":"current limiting resistor for LED1 at 5V"},
+    {"part":"Resistor", "name","R2", "value":"220 ohm", "notes":"current limiting resistor for LED2 at 5V"},
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "D1": ["anode", "cathode"],
+    "D2": ["anode", "cathode"],
+    "R1": ["1", "2"],
+    "R2": ["1", "2]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"D1", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D1 cathode to Uno GND
+    [{"name":"D1", "pin":"anode"}, {"name": "R1", "pin":"2"}],          # Connect D1 anode to pin 2 of R1 (current limiting resistor)
+    [{"name":"R1", "pin":"1"}, {"name": "uno", "pin":"D5"}],            # Connect pin 1 of R1 (current limiting resistor) to Uno Digital I/O 5 (D5), to activate/deactivate D1
+    [{"name":"D2", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D2 cathode to Uno GND
+    [{"name":"D2", "pin":"anode"}, {"name": "R2", "pin":"2"}],          # Connect D2 anode to pin 2 of R2 (current limiting resistor)
+    [{"name":"R2", "pin":"1"}, {"name": "uno", "pin":"D6"}],            # Connect pin 1 of R2 (current limiting resistor) to Uno Digital I/O 5 (D6), to activate/deactivate D2
+]
+```
+
+Arduino Uno Code:
+```
+// Alternating blink
+// This code interfaces with a circuit that has two LEDS that blink in an alternating pattern.
+// The pattern changes every second.
+
+// LED 1 on Digital I/O 5
+#define PIN_LED1 5
+// LED 2 on Digital I/O 6
+#define PIN_LED2 6
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+    // Initialize LED pins to output mode
+    pinMode(PIN_LED1, OUTPUT);
+    pinMode(PIN_LED2, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 ON
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 OFF
+    delay(1000);                      // wait for a second
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 OFF
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 ON
+    delay(1000);                      // wait for a second
+}
+```
+
+Instructions:
+```
+- This code uses only standard libraries. No additional libraries are required in the library manager.
+- Assemble circuit and program as normal. 
+```
+
+Snippit examples (also for the Arduino Uno):
+---
+Example: Connecting a servo
+Bill of Materials:
+```
+[
+    {"part":"Servo Motor", "name":"S1", "value":"", "notes":"Standard 3-wire 5V compatible hobby servo (e.g. SG90)"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Servo Motor": ["VCC", "GND", "signal"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D3"}], # Connect Servo 1 signal to Uno D3
+    [{"name":"S1", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect Servo 1 VCC to Uno 5V
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect Servo 1 GND to Uno GND
+]
+```
+---
+
+Example: Connecting a button (pull-up)
+Bill of Materials:
+```
+[
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}], # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}], # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}], # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}] # Connect Button pin 2 to GND
+]
+```
+---
+
+Example: This is a case of what NOT to do.
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"inputs"}, {"name": "uno", "pin":"D5-D10"}] # BAD: This does not list each connection individually. It is not clear which pin on the IC is connected to which pin on the Uno.
+]
+```
+---
+Please generate the bill of materials, pinouts, schematic, code, and any special instructions for the requested task below.  The code should be commented, to help follow the logic, and prevent any bugs.The platform is: Arduino Uno.
+The task is: Create a device that produces a sawtooth wave, ramping up from 0V to 5V every 50 milliseconds..
+
+---
+ ### FIXES FROM LAST STEP 
+- Add power (5V, GND) and analog ground (AGND) connections to BOM and schematic.
+- Add pin 3 connection for POT1 in pinouts and schematic.
+- Add comments to code for readability.
+- Add instruction to connect oscilloscope AGND to Uno AGND.
+
+
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"Potentiometer", "name":"POT1", "value":"10k ohm", "notes":"Adjustable voltage divider to set sawtooth frequency."} ,
+    {"part":"Power Supply", "name":"PS1", "value":"5V", "notes":"To power Uno and potentiometer."},
+    {"part":"Oscilloscope", "name":"SCOPE1", "value":"", "notes":"To view output sawtooth wave."}  
+]
+```
+
+Pinouts:
+``` 
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL", "AGND"],
+    "POT1": ["1", "2", "3"],
+    "Power Supply": ["V+", "V-"],
+    "Oscilloscope": ["CH1", "CH2", "AGND"]  
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"PS1", "pin":"V+"}, {"name": "uno", "pin":"5V"}],    # Connect power supply positive to Uno 5V
+    [{"name":"PS1", "pin":"V-"}, {"name": "uno", "pin":"GND"}],   # Connect power supply negative to Uno GND
+    [{"name":"POT1", "pin":"1"}, {"name": "uno", "pin":"5V"}],    # Connect POT1 pin 1 to Uno 5V
+    [{"name":"POT1", "pin":"2"}, {"name": "uno", "pin":"A0"}],    # Connect POT1 wiper (pin 2) to Uno Analog Input 0
+    [{"name":"POT1", "pin":"3"}, {"name": "uno", "pin":"GND"}],   # Connect POT1 pin 3 to Uno GND
+    [{"name":"uno", "pin":"A1"}, {"name": "SCOPE1", "pin":"CH1"}],# Connect Uno Analog Output 1 to oscilloscope CH1
+    [{"name":"uno", "pin":"AGND"}, {"name": "SCOPE1", "pin":"AGND"}] # Connect Uno AGND to oscilloscope AGND
+]
+```
+
+Arduino Uno Code:
+```
+// Sawtooth wave generator
+// This code generates a sawtooth wave on the Uno's analog output, 
+// with frequency adjustable using a potentiometer.
+
+#define PIN_POT A0     // Potentiometer connected to Analog Input 0
+#define PIN_SAWTOOTH A1 // Sawtooth wave on Analog Output 1
+
+// Variable to store potentiometer reading
+int potVal;  
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // Initialize pins
+  pinMode(PIN_POT, INPUT);    
+  pinMode(PIN_SAWTOOTH, OUTPUT);
+  
+  // Comment: Set pin modes
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  // Read potentiometer value
+  potVal = analogRead(PIN_POT);  
+  
+  // Map potentiometer range (0-1023) to frequency range (10-200ms)
+  int freq = map(potVal, 0, 1023, 10, 200);  
+  
+  // Generate sawtooth wave
+  for (int i=0; i<=5; i++) {
+    analogWrite(PIN_SAWTOOTH, i*1024/5);   // Ramp up
+    delay(freq);                           // Wait
+  }
+  for (int i=5; i>=0; i--) {
+    analogWrite(PIN_SAWTOOTH, i*1024/5);   // Ramp down
+    delay(freq);                           // Wait
+  }
+}
+```
+
+Instructions:
+- Assemble circuit and program as normal.  
+- Connect 5V power supply to power Uno and POT1.
+- Connect oscilloscope CH1 to Uno Analog Output 1 and AGND to Uno AGND.
+- Adjust POT1 to set the desired sawtooth frequency. The output can be viewed on the oscilloscope.
+---
+
+Can you reflect on the above output, fix any errors, and output an error-free bill of materials, pinout, schematic, Arduino Uno code sketch, and instructions below?
+Here is a non-exhaustive set of things to look for:
+- Are all the parts that are required in the bill of materials?  
+- Are there extra parts in the bill of materials that are not used?
+- Are all the parts in the bill of materials listed in the pinouts?
+- Do the pinouts list all the pins of each part?
+- What parts require connection to power and ground lines?  Are their power and ground lines connected in the schematic?  All power and lines must be explicitly connected.
+- What parts have digital or analog inputs or outputs?  Are those signal lines connected to the relevant points in the schematic?
+- What parts are passives, like resistors, capacitors, and other parts?  Are all their pins appropriately connected?  Do they have pins left unconnected?
+- Are all the required pins of each part connected in the schematic? 
+- Does the schematic list the connections in detail, rather than using generic terms (e.g. "input pins") or ranges (e.g. "D5-D10")?
+- Does the code function as intended?  
+- Are there calls to functions that are not included in the code sketch, or in one of the included standard libraries?  Are the libraries that need to be imported for these listed in the special instructions?
+- Are there special programming instructions?
+
+Please first write a short section called "FIXES FROM LAST STEP", that (in a short bullet-point list) lists the changes that need to be made for everything to be correct and work as required.
+
+Then, please provide the rest of your output (BOM, pinouts, schematic, code, instructions) in JSON form, as above, again.  When done, output a single line saying "### DONE ###".
+
+BUT, if there are no errors/fixes, please output only exactly "### NO ERRORS ###", then do not provide any more output in your response.
+
+
+----------------------------------------
+
+generalArea:
+Output
+
+specificArea:
+Analog Output
+
+platform:
+Arduino Uno
+
+taskName:
+output-analog
+
+taskDescription:
+Create a device that produces a sawtooth wave, ramping up from 0V to 5V every 50 milliseconds.
+
+tasks:
+None
+
+filenameIn:
+text2device-task-descriptions.tsv
+
+pathOut:
+generated-toeval-1/
+
+all:
+True
+
+numGenerations:
+3
+
+genNum:
+0
+

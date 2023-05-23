@@ -1,0 +1,484 @@
+task:
+a device that measures the mass of a coffee cup, then (knowing how much the average coffee cup holds, and how much coffee tends to weigh), it displays how full the coffee cup is using a strip of 8 neopixels.  There should be a button that allows the user to set the mass of an empty coffee cup, by placing an empty cup on it, and pressing the button. The device also measures the temperature of the coffee using a non-contact temperature sensor, and changes the color of the neopixels according to the temperature of the coffee.
+
+microcontrollerPlatform:
+Arduino Uno
+
+temperature:
+0.0
+
+engine:
+claude-v1
+
+generationMode:
+ALL_AT_ONCE
+
+success:
+False
+
+numTokensPrompts:
+2141
+
+numTokensResponses:
+3994
+
+totalTokensSent:
+6279
+
+totalTokensReceived:
+3994
+
+costEstimateDollars:
+0.0
+
+responses:
+----------------------------------------
+response 0:
+ Here is the output for the requested task:
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"HX711 Load Cell Amplifier", "name":"HX711", "value":"", "notes":"24-bit analog-to-digital converter for weight sensors"},
+    {"part":"Load Cell", "name":"LC1", "value":"50kg", "notes":"Load cell with 50kg max capacity"},
+    {"part":"Neopixel LED strip", "name":"strip1", "value":"8 LEDs", "notes":"WS2812B addressable RGB LED strip with 8 LEDs"},
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"},
+    {"part":"MLX90614 IR Thermometer", "name":"temp1", "value":"", "notes":"Non-contact IR temperature sensor"} 
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "HX711": ["E+", "E-", "A+", "A-", "B+", "B-", "C+", "C-"],
+    "Load Cell": ["1", "2", "3", "4"],
+    "strip1": ["DIN", "5V", "GND"],
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"],
+    "MLX90614": ["VCC", "GND", "SDA", "SCL"] 
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"HX711", "pin":"E+"}, {"name": "LC1", "pin":"1"}],   # Connect HX711 E+ to Load Cell pin 1
+    [{"name":"HX711", "pin":"E-"}, {"name": "LC1", "pin":"2"}],   # Connect HX711 E- to Load Cell pin 2
+    [{"name":"HX711", "pin":"A+"}, {"name": "LC1", "pin":"3"}],   # Connect HX711 A+ to Load Cell pin 3
+    [{"name":"HX711", "pin":"A-"}, {"name": "LC1", "pin":"4"}],   # Connect HX711 A- to Load Cell pin 4
+    [{"name":"HX711", "pin":"B+"}, {"name": "uno", "pin":"3.3V"}],# Connect HX711 B+ to Uno 3.3V
+    [{"name":"HX711", "pin":"B-"}, {"name": "uno", "pin":"GND"}], # Connect HX711 B- to Uno GND
+    [{"name":"HX711", "pin":"C+"}, {"name": "uno", "pin":"A0"}],  # Connect HX711 C+ to Uno A0 (analog input)
+    [{"name":"HX711", "pin":"C-"}, {"name": "uno", "pin":"GND"}], # Connect HX711 C- to Uno GND
+    [{"name":"strip1", "pin":"DIN"}, {"name": "uno", "pin":"D6"}], # Connect strip1 DIN to Uno D6 (data input for neopixels)
+    [{"name":"strip1", "pin":"5V"}, {"name": "uno", "pin":"5V"}],   # Connect strip1 5V to Uno 5V
+    [{"name":"strip1", "pin":"GND"}, {"name": "uno", "pin":"GND"}],# Connect strip1 GND to Uno GND
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}],     # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}],       # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}],      # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}],    # Connect Button pin 2 to GND
+    [{"name":"temp1", "pin":"VCC"}, {"name": "uno", "pin":"3.3V"}],# Connect temp1 VCC to Uno 3.3V
+    [{"name":"temp1", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect temp1 GND to Uno GND
+    [{"name":"temp1", "pin":"SDA"}, {"name": "uno", "pin":"A4"}],  # Connect temp1 SDA to Uno A4 (I2C data)
+    [{"name":"temp1", "pin":"SCL"}, {"name": "uno", "pin":"A5"}]   # Connect temp1 SCL to Uno A5 (I2C clock)
+]
+```
+
+Arduino Uno Code:
+```
+// Coffee cup fullness and temperature indicator
+// This code interfaces with a load cell and IR thermometer to determine 
+// the fullness and temperature of a coffee cup. It displays this on a 
+// strip of 8 neopixels.
+
+#include <Adafruit_NeoPixel.h>
+#include <HX711.h>
+#include <Wire.h>
+#include <Adafruit_MLX90614.h>
+
+#define PIN_STRIP  6     // Neopixel DATA pin
+#define PIN_BUTTON 2     // Button pin
+#define CAL_FACTOR -7050 // Calibration factor for your load cell
+
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(8, PIN_STRIP, NEO_GRB + NEO_KHZ800);
+HX711 scale;
+Adafruit_MLX90614 mlx = Adafruit_MLX90614();
+
+float emptyCupWeight; // Weight of empty cup in grams
+
+void setup() {
+  strip.begin();           // Initialize Neopixel strip
+  strip.show();            // Initialize all pixels to 'off'
+  scale.begin(A0, A1);    // Initialize HX711 (DOUT pin, SCK pin)
+  scale.set_scale(CAL_FACTOR); // Set calibration factor
+  scale.tare();           // Reset the scale to 0
+  pinMode(PIN_BUTTON, INPUT_PULLUP); // Enable internal pull-up on button pin
+  mlx.begin();            // Initialize MLX90614 IR thermometer 
+}
+
+void loop() {
+  float weight = scale.get_units(10); // Get weight in grams
+  if (weight > 0) {
+    float fullness = (weight - emptyCupWeight) / (230 - emptyCupWeight); // 230g is average full coffee cup weight
+    fullness = constrain(fullness, 0, 1); // Limit to 0-1 range
+    setStrip(fullness);                  // Set neopixel strip based on fullness
+  }
+  
+  float temp = mlx.readObjectTempC(); // Get temperature in C
+  setStripColor(temp);                // Set neopixel color based on temperature
+  
+  if (digitalRead(PIN_BUTTON) == LOW) {  // If button pressed
+    emptyCupWeight = weight;            // Set reference empty cup weight
+  }
+}
+
+void setStrip(float fullness) {
+  int numLEDs = round(fullness * 8);   // Calculate num LEDs to light based on fullness
+  for (int i=0; i<numLEDs; i++) {      // Loop to light correct number of LEDs
+    strip.setPixelColor(i, 0, 255, 0);  // Set LED to green
+  }
+  strip.show();
+}
+
+void setStripColor(float temp) {
+  if (temp < 65) {                     // If under 65 C
+    strip.setPixelColor(0, 0, 0, 255); // Set first LED to blue
+  } else if (temp < 85) {             // If 65-85 C
+    strip.setPixelColor(0, 255, 255, 0); // Set first LED to yellow 
+  } else {                             // If over 85 C
+    strip.setPixelColor(0, 255, 0, 0);   // Set first LED to red
+  }
+  strip.show();
+}
+```
+
+Instructions: 
+- Install the HX711 and Adafruit MLX90614 libraries using the Arduino Library Manager
+- Calibrate the load cell by placing known weights on it and adjusting the CAL_FACTOR until the output matches 
+- The empty cup weight Here is the output for the requested task:
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"HX711 Load Cell Amplifier", "name":"HX711", "value":"", "notes":"24-bit analog-to-digital converter for weight sensors"},
+    {"part":"Load Cell", "name":"LC1", "value":"50kg", "notes":"Load cell with 50kg max capacity"},
+    {"part":"Neopixel LED strip", "name":"strip1", "value":"8 LEDs", "notes":"WS2812B addressable RGB LED strip with 8 LEDs"},
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"},
+    {"part":"MLX90614 IR Thermometer", "name":"temp1", "value":"", "notes":"Non-contact IR temperature sensor"} 
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "HX711": ["E+", "E-", "A+", "A-", "B+", "B-", "C+", "C-"],
+    "Load Cell": ["1", "2", "3", "4"],
+    "strip1": ["DIN", "5V", "GND"],
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"],
+    "MLX90614": ["VCC", "GND", "SDA", "SCL"] 
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"HX711", "pin":"E+"}, {"name": "LC1", "pin":"1"}],   # Connect HX711 E+ to Load Cell pin 1
+    [{"name":"HX711", "pin":"E-"}, {"name": "LC1", "pin":"2"}],   # Connect HX711 E- to Load Cell pin 2
+    [{"name":"HX711", "pin":"A+"}, {"name": "LC1", "pin":"3"}],   # Connect HX711 A+ to Load Cell pin 3
+    [{"name":"HX711", "pin":"A-"}, {"name": "LC1", "pin":"4"}],   # Connect HX711 A- to Load Cell pin 4
+    [{"name":"HX711", "pin":"B+"}, {"name": "uno", "pin":"3.3V"}],# Connect HX711 B+ to Uno 3.3V
+    [{"name":"HX711", "pin":"B-"}, {"name": "uno", "pin":"GND"}], # Connect HX711 B- to Uno GND
+    [{"name":"HX711", "pin":"C+"}, {"name": "uno", "pin":"A0"}],  # Connect HX711 C+ to Uno A0 (analog input)
+    [{"name":"HX711", "pin":"C-"}, {"name": "uno", "pin":"GND"}], # Connect HX711 C- to Uno GND
+    [{"name":"strip1", "pin":"DIN"}, {"name": "uno", "pin":"D6"}], # Connect strip1 DIN to Uno D6 (data input for neopixels)
+    [{"name":"strip1", "pin":"5V"}, {"name": "uno", "pin":"5V"}],   # Connect strip1 5V to Uno 5V
+    [{"name":"strip1", "pin":"GND"}, {"name": "uno", "pin":"GND"}],# Connect strip1 GND to Uno GND
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}],     # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}],       # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}],      # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}],    # Connect Button pin 2 to GND
+    [{"name":"temp1", "pin":"VCC"}, {"name": "uno", "pin":"3.3V"}],# Connect temp1 VCC to Uno 3.3V
+    [{"name":"temp1", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect temp1 GND to Uno GND
+    [{"name":"temp1", "pin":"SDA"}, {"name": "uno", "pin":"A4"}],  # Connect temp1 SDA to Uno A4 (I2C data)
+    [{"name":"temp1", "pin":"SCL"}, {"name": "uno", "pin":"A5"}]   # Connect temp1 SCL to Uno A5 (I2C clock)
+]
+```
+
+Arduino Uno Code:
+```
+// Coffee cup fullness and temperature indicator
+// This code interfaces with a load cell and IR thermometer to determine 
+// the fullness and temperature of a coffee cup. It displays this on a 
+// strip of 8 neopixels.
+
+#include <Adafruit_NeoPixel.h>
+#include <HX711.h>
+#include <Wire.h>
+#include <Adafruit_MLX90614.h>
+
+#define PIN_STRIP  6     // Neopixel DATA pin
+#define PIN_BUTTON 2     // Button pin
+#define CAL_FACTOR -7050 // Calibration factor for your load cell
+
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(8, PIN_STRIP, NEO_GRB + NEO_KHZ800);
+HX711 scale;
+Adafruit_MLX90614 mlx = Adafruit_MLX90614();
+
+float emptyCupWeight; // Weight of empty cup in grams
+
+void setup() {
+  strip.begin();           // Initialize Neopixel strip
+  strip.show();            // Initialize all pixels to 'off'
+  scale.begin(A0, A1);    // Initialize HX711 (DOUT pin, SCK pin)
+  scale.set_scale(CAL_FACTOR); // Set calibration factor
+  scale.tare();           // Reset the scale to 0
+  pinMode(PIN_BUTTON, INPUT_PULLUP); // Enable internal pull-up on button pin
+  mlx.begin();            // Initialize MLX90614 IR thermometer 
+}
+
+void loop() {
+  float weight = scale.get_units(10); // Get weight in grams
+  if (weight > 0) {
+    float fullness = (weight - emptyCupWeight) / (230 - emptyCupWeight); // 230g is average full coffee cup weight
+    fullness = constrain(fullness, 0, 1); // Limit to 0-1 range
+    setStrip(fullness);                  // Set neopixel strip based on fullness
+  }
+  
+  float temp = mlx.readObjectTempC(); // Get temperature in C
+  setStripColor(temp);                // Set neopixel color based on temperature
+  
+  if (digitalRead(PIN_BUTTON) == LOW) {  // If button pressed
+    emptyCupWeight = weight;            // Set reference empty cup weight
+  }
+}
+
+void setStrip(float fullness) {
+  int numLEDs = round(fullness * 8);   // Calculate num LEDs to light based on fullness
+  for (int i=0; i<numLEDs; i++) {      // Loop to light correct number of LEDs
+    strip.setPixelColor(i, 0, 255, 0);  // Set LED to green
+  }
+  strip.show();
+}
+
+void setStripColor(float temp) {
+  if (temp < 65) {                     // If under 65 C
+    strip.setPixelColor(0, 0, 0, 255); // Set first LED to blue
+  } else if (temp < 85) {             // If 65-85 C
+    strip.setPixelColor(0, 255, 255, 0); // Set first LED to yellow 
+  } else {                             // If over 85 C
+    strip.setPixelColor(0, 255, 0, 0);   // Set first LED to red
+  }
+  strip.show();
+}
+```
+
+Instructions: 
+- Install the HX711 and Adafruit MLX90614 libraries using the Arduino Library Manager
+- Calibrate the load cell by placing known weights on it and adjusting the CAL_FACTOR until the output matches 
+- The empty cup weight
+
+----------------------------------------
+
+prompts:
+----------------------------------------
+prompt 0:
+You are DeveloperGPT, the most advanced AI developer tool on the planet.  You answer any coding question, and provide real useful example code using code blocks.  Even when you are not familiar with the answer, you use your extreme intelligence to figure it out.
+Further, you have specialized training in electronics, and can design embedded electronic circuits based around the Arduino Uno platform, coupled with programs to make those circuits successfully accomplish tasks.
+Your task is to: a device that measures the mass of a coffee cup, then (knowing how much the average coffee cup holds, and how much coffee tends to weigh), it displays how full the coffee cup is using a strip of 8 neopixels.  There should be a button that allows the user to set the mass of an empty coffee cup, by placing an empty cup on it, and pressing the button. The device also measures the temperature of the coffee using a non-contact temperature sensor, and changes the color of the neopixels according to the temperature of the coffee.
+
+Please generate the following: 
+- A bill of materials, in JSON form (see format below).  
+- A pinout, in JSON form (see format below). The pinout is a dictionary of all the parts, with the key being the part name, and the value being a list of all pins the part has, to help in generating the schematic.
+- A schematic, in JSON form (see format below). Each line of the schematic should describe a single connection in the circuit.
+- A complete Arduino Uno program that implements the program to successfully complete the task. 
+Each section should be between code blocks ```.
+- A brief set of special instructions, in point form, if required.
+
+
+Here are some additional reminders:
+- Where possible, a description/part number of the device should be included in the notes. Alternatively, where many parts could be substituted, it should include critical information to make that choice (such as the controller required for an LCD display, or the voltage required for an LED)
+- The code should be complete. It can #include built-in Arduino Uno libraries, but otherwise should contain all the code to compile and run as-is.
+
+    
+Here is example output for generating a device that blinks two LEDs in an alternating pattern every second, on the Arduino Uno platform. 
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"LED", "name":"D1", "value":"red", "notes":"alternating LED 1. Standard voltage range (2-3.3V)."},
+    {"part":"LED", "name","D2", "value":"white", "notes":"alternating LED 2. Standard voltage range (2-3.3V)."},
+    {"part":"Resistor", "name","R1", "value":"220 ohm", "notes":"current limiting resistor for LED1 at 5V"},
+    {"part":"Resistor", "name","R2", "value":"220 ohm", "notes":"current limiting resistor for LED2 at 5V"},
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "D1": ["anode", "cathode"],
+    "D2": ["anode", "cathode"],
+    "R1": ["1", "2"],
+    "R2": ["1", "2]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"D1", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D1 cathode to Uno GND
+    [{"name":"D1", "pin":"anode"}, {"name": "R1", "pin":"2"}],          # Connect D1 anode to pin 2 of R1 (current limiting resistor)
+    [{"name":"R1", "pin":"1"}, {"name": "uno", "pin":"D5"}],            # Connect pin 1 of R1 (current limiting resistor) to Uno Digital I/O 5 (D5), to activate/deactivate D1
+    [{"name":"D2", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D2 cathode to Uno GND
+    [{"name":"D2", "pin":"anode"}, {"name": "R2", "pin":"2"}],          # Connect D2 anode to pin 2 of R2 (current limiting resistor)
+    [{"name":"R2", "pin":"1"}, {"name": "uno", "pin":"D6"}],            # Connect pin 1 of R2 (current limiting resistor) to Uno Digital I/O 5 (D6), to activate/deactivate D2
+]
+```
+
+Arduino Uno Code:
+```
+// Alternating blink
+// This code interfaces with a circuit that has two LEDS that blink in an alternating pattern.
+// The pattern changes every second.
+
+// LED 1 on Digital I/O 5
+#define PIN_LED1 5
+// LED 2 on Digital I/O 6
+#define PIN_LED2 6
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+    // Initialize LED pins to output mode
+    pinMode(PIN_LED1, OUTPUT);
+    pinMode(PIN_LED2, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 ON
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 OFF
+    delay(1000);                      // wait for a second
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 OFF
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 ON
+    delay(1000);                      // wait for a second
+}
+```
+
+Instructions:
+```
+- This code uses only standard libraries. No additional libraries are required in the library manager.
+- Assemble circuit and program as normal. 
+```
+
+Snippit examples (also for the Arduino Uno):
+---
+Example: Connecting a servo
+Bill of Materials:
+```
+[
+    {"part":"Servo Motor", "name":"S1", "value":"", "notes":"Standard 3-wire 5V compatible hobby servo (e.g. SG90)"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Servo Motor": ["VCC", "GND", "signal"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D3"}], # Connect Servo 1 signal to Uno D3
+    [{"name":"S1", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect Servo 1 VCC to Uno 5V
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect Servo 1 GND to Uno GND
+]
+```
+---
+
+Example: Connecting a button (pull-up)
+Bill of Materials:
+```
+[
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}], # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}], # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}], # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}] # Connect Button pin 2 to GND
+]
+```
+---
+
+Example: This is a case of what NOT to do.
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"inputs"}, {"name": "uno", "pin":"D5-D10"}] # BAD: This does not list each connection individually. It is not clear which pin on the IC is connected to which pin on the Uno.
+]
+```
+---
+Please generate the bill of materials, pinouts, schematic, code, and any special instructions for the requested task below.  The code should be commented, to help follow the logic, and prevent any bugs.The platform is: Arduino Uno.
+The task is: a device that measures the mass of a coffee cup, then (knowing how much the average coffee cup holds, and how much coffee tends to weigh), it displays how full the coffee cup is using a strip of 8 neopixels.  There should be a button that allows the user to set the mass of an empty coffee cup, by placing an empty cup on it, and pressing the button. The device also measures the temperature of the coffee using a non-contact temperature sensor, and changes the color of the neopixels according to the temperature of the coffee..
+
+
+----------------------------------------
+
+generalArea:
+Logic
+
+specificArea:
+Combinations
+
+platform:
+Arduino Uno
+
+taskName:
+coffee-cup-mass3
+
+taskDescription:
+a device that measures the mass of a coffee cup, then (knowing how much the average coffee cup holds, and how much coffee tends to weigh), it displays how full the coffee cup is using a strip of 8 neopixels.  There should be a button that allows the user to set the mass of an empty coffee cup, by placing an empty cup on it, and pressing the button. The device also measures the temperature of the coffee using a non-contact temperature sensor, and changes the color of the neopixels according to the temperature of the coffee.
+
+tasks:
+None
+
+filenameIn:
+text2device-task-descriptions.tsv
+
+pathOut:
+generated-toeval-1/
+
+all:
+True
+
+numGenerations:
+3
+
+genNum:
+0
+

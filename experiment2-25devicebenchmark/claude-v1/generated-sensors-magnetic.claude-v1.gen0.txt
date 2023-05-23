@@ -1,0 +1,844 @@
+task:
+Create a device that reads the current magnetic field readings using a HMC5883L magnetometer.  The readings (x, y, z, and total field strength) should be output to the Serial port every second.
+
+microcontrollerPlatform:
+Arduino Uno
+
+temperature:
+0.0
+
+engine:
+claude-v1
+
+generationMode:
+ALL_AT_ONCE
+
+success:
+True
+
+numTokensPrompts:
+5897
+
+numTokensResponses:
+2991
+
+totalTokensSent:
+5897
+
+totalTokensReceived:
+2990
+
+costEstimateDollars:
+0.0
+
+responses:
+----------------------------------------
+response 0:
+ Here is the output for the requested task:
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"HMC5883L", "name":"IC1", "value":"", "notes":"3-axis digital compass IC"},
+    {"part":"Resistor", "name":"R1", "value":"4.7k ohm", "notes":"Pull-up resistor for IC1 interrupt pin"},
+    {"part":"Capacitor", "name":"C1", "value":"0.1 uF", "notes":"Decoupling capacitor for IC1 VCC pin"}
+]
+```
+
+Pinouts: 
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "HMC5883L": ["VCC", "GND", "SCL", "SDA", "DRDY", "INT"],
+    "R1": ["1", "2"],
+    "C1": ["1", "2"] 
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"VCC"}, {"name": "uno", "pin":"3.3V"}],   # Connect IC1 VCC to Uno 3.3V
+    [{"name":"IC1", "pin":"GND"}, {"name": "uno", "pin":"GND"}],   # Connect IC1 GND to Uno GND
+    [{"name":"IC1", "pin":"SCL"}, {"name": "uno", "pin":"A5"}],    # Connect IC1 SCL to Uno A5 (I2C clock)
+    [{"name":"IC1", "pin":"SDA"}, {"name": "uno", "pin":"A4"}],    # Connect IC1 SDA to Uno A4 (I2C data)
+    [{"name":"IC1", "pin":"DRDY"}, {"name": "uno", "pin":"D2"}],   # Connect IC1 DRDY to Uno D2 (data ready interrupt)
+    [{"name":"IC1", "pin":"INT"}, {"name": "R1", "pin":"1"}],      # Connect IC1 INT to R1 pin 1 (pull-up resistor)
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"3.3V"}],    # Connect R1 pin 2 to Uno 3.3V (pull-up)
+    [{"name":"C1", "pin":"1"}, {"name": "IC1", "pin":"VCC"}],     # Connect C1 pin 1 to IC1 VCC (decoupling capacitor)
+    [{"name":"C1", "pin":"2"}, {"name": "uno", "pin":"GND"}]      # Connect C1 pin 2 to Uno GND (decoupling capacitor) 
+]
+```
+
+Arduino Uno Code:
+```
+// HMC5883L Magnetometer
+// This code interfaces with a HMC5883L 3-axis magnetometer IC over I2C.
+// It reads the x, y, z magnetic field values as well as total field strength and outputs them over serial once per second.
+
+#include <Wire.h>
+
+// HMC5883L I2C address
+#define ADDRESS 0x1E
+
+// Configuration register A 
+#define REG_A 0x00
+// Configuration register B 
+#define REG_B 0x01
+// Mode register
+#define REG_MODE 0x02
+// Data output X MSB register
+#define REG_X_MSB 0x03
+// Data output X LSB register
+#define REG_X_LSB 0x04
+// Data output Y MSB register
+#define REG_Y_MSB 0x05
+// Data output Y LSB register
+#define REG_Y_LSB 0x06
+// Data output Z MSB register
+#define REG_Z_MSB 0x07
+// Data output Z LSB register 
+#define REG_Z_LSB 0x08
+
+// Variables to store magnetometer data
+int x, y, z;
+float total;
+
+void setup() {
+    // Initialize serial and I2C communications
+    Serial.begin(9600);
+    Wire.begin();
+    
+    // Configure magnetometer
+    // 8 samples averaged, 15 Hz frequency, normal measurement mode
+    writeRegister(REG_A, 0b01110000); 
+    writeRegister(REG_B, 0b00100000);
+    writeRegister(REG_MODE, 0b00100000);
+}
+
+void loop() {
+    // Read x, y, z axis data
+    readAxes();
+    
+    // Calculate total field strength
+    total = sqrt(x*x + y*y + z*z);
+    
+    // Output to serial monitor
+    Serial.print("X: "); Serial.print(x); 
+    Serial.print("  Y: "); Serial.print(y);
+    Serial.print("  Z: "); Serial.print(z);
+    Serial.print("  Total: "); Serial.println(total);
+    
+    // Wait 1 second before repeating
+    delay(1000); 
+}
+
+// Write a register to the HMC5883L
+void writeRegister(byte reg, byte value) {
+  Wire.beginTransmission(ADDRESS);
+  Wire.write(reg);
+  Wire.write(value);
+  Wire.endTransmission();  
+}
+
+// Read x, y, z axes data from the HMC5883L 
+void readAxes() {
+  Wire.beginTransmission(ADDRESS);
+  Wire.write(REG_X_MSB);
+  Wire.endTransmission();
+  
+  Wire.requestFrom(ADDRESS, 6);
+  
+  // Read x-axis data
+  x = Wire.read()<<8; // X msb
+  x |= Wire.read();   // X lsb
+  
+  // Read y-axis data
+  y = Wire.read()<<8; // Y msb
+  y |= Wire.read();   // Y lsb
+  
+  // Read z-axis data
+  z = Wire.read()<<8; // Z msb 
+  z |= Wire.read();   // Z lsb
+}
+```
+
+Instructions:
+```
+- This code uses the built-in Wire library for I2C communication. No additional libraries are required.
+- The magnetometer is configured for 8 sample averaging, 15 Hz frequency, and normal measurement mode.
+- The total field strength is calculated from the raw x, y, z axis data.
+- Data is output over serial once per second.
+- Assemble circuit and upload code as normal. Ensure the HMC5883L is oriented correctly for your application.
+```
+
+----------------------------------------
+----------------------------------------
+response 1:
+ FIXES FROM LAST STEP
+- Add decoupling capacitor for HMC5883L VCC pin 
+- Add pull-up resistor for HMC5883L INT pin
+- Connect HMC5883L INT pin to pull-up resistor
+- Connect decoupling capacitor pins appropriately 
+- Add comments to code for readability
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"HMC5883L", "name":"IC1", "value":"", "notes":"3-axis digital compass IC"},
+    {"part":"Resistor", "name":"R1", "value":"4.7k ohm", "notes":"Pull-up resistor for IC1 interrupt pin"},
+    {"part":"Capacitor", "name":"C1", "value":"0.1 uF", "notes":"Decoupling capacitor for IC1 VCC pin"}
+]
+```
+
+Pinouts:
+``` 
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "HMC5883L": ["VCC", "GND", "SCL", "SDA", "DRDY", "INT"],
+    "R1": ["1", "2"],
+    "C1": ["1", "2"]  
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"VCC"}, {"name": "uno", "pin":"3.3V"}],   # Connect IC1 VCC to Uno 3.3V
+    [{"name":"IC1", "pin":"GND"}, {"name": "uno", "pin":"GND"}],   # Connect IC1 GND to Uno GND
+    [{"name":"IC1", "pin":"SCL"}, {"name": "uno", "pin":"A5"}],    # Connect IC1 SCL to Uno A5 (I2C clock)
+    [{"name":"IC1", "pin":"SDA"}, {"name": "uno", "pin":"A4"}],    # Connect IC1 SDA to Uno A4 (I2C data)
+    [{"name":"IC1", "pin":"DRDY"}, {"name": "uno", "pin":"D2"}],   # Connect IC1 DRDY to Uno D2 (data ready interrupt)
+    [{"name":"IC1", "pin":"INT"}, {"name": "R1", "pin":"1"}],      # Connect IC1 INT to R1 pin 1 (pull-up resistor)
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"3.3V"}],    # Connect R1 pin 2 to Uno 3.3V (pull-up)
+    [{"name":"C1", "pin":"1"}, {"name": "IC1", "pin":"VCC"}],     # Connect C1 pin 1 to IC1 VCC (decoupling capacitor) 
+    [{"name":"C1", "pin":"2"}, {"name": "uno", "pin":"GND"}]      # Connect C1 pin 2 to Uno GND (decoupling capacitor)
+]
+```
+
+Arduino Uno Code:
+```
+// HMC5883L Magnetometer
+// This code interfaces with a HMC5883L 3-axis magnetometer IC over I2C.
+// It reads the x, y, z magnetic field values as well as total field strength and outputs them over serial once per second.
+
+#include <Wire.h>
+
+// HMC5883L I2C address
+#define ADDRESS 0x1E  
+
+// Configuration register A  
+#define REG_A 0x00  
+// Configuration register B  
+#define REG_B 0x01
+// Mode register
+#define REG_MODE 0x02
+// Data output X MSB register
+#define REG_X_MSB 0x03
+// Data output X LSB register
+#define REG_X_LSB 0x04
+// Data output Y MSB register
+#define REG_Y_MSB 0x05
+// Data output Y LSB register
+#define REG_Y_LSB 0x06
+// Data output Z MSB register
+#define REG_Z_MSB 0x07
+// Data output Z LSB register  
+#define REG_Z_LSB 0x08
+
+// Variables to store magnetometer data
+int x, y, z;  
+float total;
+
+void setup() {
+    // Initialize serial and I2C communications
+    Serial.begin(9600);
+    Wire.begin();
+    
+    // Configure magnetometer
+    // 8 samples averaged, 15 Hz frequency, normal measurement mode
+    writeRegister(REG_A, 0b01110000);  
+    writeRegister(REG_B, 0b00100000);
+    writeRegister(REG_MODE, 0b00100000);
+}
+
+void loop() {
+    // Read x, y, z axis data
+    readAxes();  
+    
+    // Calculate total field strength
+    total = sqrt(x*x + y*y + z*z);  
+    
+    // Output to serial monitor
+    Serial.print("X: "); Serial.print(x); 
+    Serial.print("  Y: "); Serial.print(y);
+    Serial.print("  Z: "); Serial.print(z);
+    Serial.print("  Total: "); Serial.println(total);
+    
+    // Wait 1 second before repeating
+    delay(1000);  
+}
+
+// Write a register to the HMC5883L
+void writeRegister(byte reg, byte value) {
+  Wire.beginTransmission(ADDRESS);
+  Wire.write(reg);
+  Wire.write(value);
+  Wire.endTransmission();  
+}
+
+// Read x, y, z axes data from the HMC5883L  
+void readAxes() {
+  Wire.beginTransmission(ADDRESS);
+  Wire.write(REG_X_MSB);
+  Wire.endTransmission();
+  
+  Wire.requestFrom(ADDRESS, 6);
+  
+  // Read x-axis data
+  x = Wire.read()<<8; // X msb
+  x |= Wire.read();   // X lsb
+  
+  // Read y-axis data
+  y = Wire.read()<<8; // Y msb
+  y |= Wire.read();   // Y lsb
+  
+  // Read z-axis data
+  z = Wire.read()<<8; // Z msb 
+  z |= Wire.read();   // Z lsb
+}
+```
+
+Instructions:
+```
+- This code uses the built-in Wire library for I2C communication. No additional libraries are required.
+- The magnetometer is configured for 8 sample averaging, 15 Hz frequency, and normal measurement mode.  
+- The total field strength is calculated from the raw x, y, z axis data. 
+- Data is output over serial once per second.
+- Assemble circuit and upload code as normal. Ensure the HMC5883L is oriented correctly for your application.
+```
+### DONE ###
+
+----------------------------------------
+
+prompts:
+----------------------------------------
+prompt 0:
+You are DeveloperGPT, the most advanced AI developer tool on the planet.  You answer any coding question, and provide real useful example code using code blocks.  Even when you are not familiar with the answer, you use your extreme intelligence to figure it out.
+Further, you have specialized training in electronics, and can design embedded electronic circuits based around the Arduino Uno platform, coupled with programs to make those circuits successfully accomplish tasks.
+Your task is to: Create a device that reads the current magnetic field readings using a HMC5883L magnetometer.  The readings (x, y, z, and total field strength) should be output to the Serial port every second.
+
+Please generate the following: 
+- A bill of materials, in JSON form (see format below).  
+- A pinout, in JSON form (see format below). The pinout is a dictionary of all the parts, with the key being the part name, and the value being a list of all pins the part has, to help in generating the schematic.
+- A schematic, in JSON form (see format below). Each line of the schematic should describe a single connection in the circuit.
+- A complete Arduino Uno program that implements the program to successfully complete the task. 
+Each section should be between code blocks ```.
+- A brief set of special instructions, in point form, if required.
+
+
+Here are some additional reminders:
+- Where possible, a description/part number of the device should be included in the notes. Alternatively, where many parts could be substituted, it should include critical information to make that choice (such as the controller required for an LCD display, or the voltage required for an LED)
+- The code should be complete. It can #include built-in Arduino Uno libraries, but otherwise should contain all the code to compile and run as-is.
+
+    
+Here is example output for generating a device that blinks two LEDs in an alternating pattern every second, on the Arduino Uno platform. 
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"LED", "name":"D1", "value":"red", "notes":"alternating LED 1. Standard voltage range (2-3.3V)."},
+    {"part":"LED", "name","D2", "value":"white", "notes":"alternating LED 2. Standard voltage range (2-3.3V)."},
+    {"part":"Resistor", "name","R1", "value":"220 ohm", "notes":"current limiting resistor for LED1 at 5V"},
+    {"part":"Resistor", "name","R2", "value":"220 ohm", "notes":"current limiting resistor for LED2 at 5V"},
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "D1": ["anode", "cathode"],
+    "D2": ["anode", "cathode"],
+    "R1": ["1", "2"],
+    "R2": ["1", "2]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"D1", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D1 cathode to Uno GND
+    [{"name":"D1", "pin":"anode"}, {"name": "R1", "pin":"2"}],          # Connect D1 anode to pin 2 of R1 (current limiting resistor)
+    [{"name":"R1", "pin":"1"}, {"name": "uno", "pin":"D5"}],            # Connect pin 1 of R1 (current limiting resistor) to Uno Digital I/O 5 (D5), to activate/deactivate D1
+    [{"name":"D2", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D2 cathode to Uno GND
+    [{"name":"D2", "pin":"anode"}, {"name": "R2", "pin":"2"}],          # Connect D2 anode to pin 2 of R2 (current limiting resistor)
+    [{"name":"R2", "pin":"1"}, {"name": "uno", "pin":"D6"}],            # Connect pin 1 of R2 (current limiting resistor) to Uno Digital I/O 5 (D6), to activate/deactivate D2
+]
+```
+
+Arduino Uno Code:
+```
+// Alternating blink
+// This code interfaces with a circuit that has two LEDS that blink in an alternating pattern.
+// The pattern changes every second.
+
+// LED 1 on Digital I/O 5
+#define PIN_LED1 5
+// LED 2 on Digital I/O 6
+#define PIN_LED2 6
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+    // Initialize LED pins to output mode
+    pinMode(PIN_LED1, OUTPUT);
+    pinMode(PIN_LED2, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 ON
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 OFF
+    delay(1000);                      // wait for a second
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 OFF
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 ON
+    delay(1000);                      // wait for a second
+}
+```
+
+Instructions:
+```
+- This code uses only standard libraries. No additional libraries are required in the library manager.
+- Assemble circuit and program as normal. 
+```
+
+Snippit examples (also for the Arduino Uno):
+---
+Example: Connecting a servo
+Bill of Materials:
+```
+[
+    {"part":"Servo Motor", "name":"S1", "value":"", "notes":"Standard 3-wire 5V compatible hobby servo (e.g. SG90)"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Servo Motor": ["VCC", "GND", "signal"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D3"}], # Connect Servo 1 signal to Uno D3
+    [{"name":"S1", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect Servo 1 VCC to Uno 5V
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect Servo 1 GND to Uno GND
+]
+```
+---
+
+Example: Connecting a button (pull-up)
+Bill of Materials:
+```
+[
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}], # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}], # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}], # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}] # Connect Button pin 2 to GND
+]
+```
+---
+
+Example: This is a case of what NOT to do.
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"inputs"}, {"name": "uno", "pin":"D5-D10"}] # BAD: This does not list each connection individually. It is not clear which pin on the IC is connected to which pin on the Uno.
+]
+```
+---
+Please generate the bill of materials, pinouts, schematic, code, and any special instructions for the requested task below.  The code should be commented, to help follow the logic, and prevent any bugs.The platform is: Arduino Uno.
+The task is: Create a device that reads the current magnetic field readings using a HMC5883L magnetometer.  The readings (x, y, z, and total field strength) should be output to the Serial port every second..
+
+
+----------------------------------------
+----------------------------------------
+prompt 1:
+You are DeveloperGPT, the most advanced AI developer tool on the planet.  You answer any coding question, and provide real useful example code using code blocks.  Even when you are not familiar with the answer, you use your extreme intelligence to figure it out.
+Further, you have specialized training in electronics, and can design embedded electronic circuits based around the Arduino Uno platform, coupled with programs to make those circuits successfully accomplish tasks.
+Your task is to: Create a device that reads the current magnetic field readings using a HMC5883L magnetometer.  The readings (x, y, z, and total field strength) should be output to the Serial port every second.
+
+Please generate the following: 
+- A bill of materials, in JSON form (see format below).  
+- A pinout, in JSON form (see format below). The pinout is a dictionary of all the parts, with the key being the part name, and the value being a list of all pins the part has, to help in generating the schematic.
+- A schematic, in JSON form (see format below). Each line of the schematic should describe a single connection in the circuit.
+- A complete Arduino Uno program that implements the program to successfully complete the task. 
+Each section should be between code blocks ```.
+- A brief set of special instructions, in point form, if required.
+
+
+Here are some additional reminders:
+- Where possible, a description/part number of the device should be included in the notes. Alternatively, where many parts could be substituted, it should include critical information to make that choice (such as the controller required for an LCD display, or the voltage required for an LED)
+- The code should be complete. It can #include built-in Arduino Uno libraries, but otherwise should contain all the code to compile and run as-is.
+
+    
+Here is example output for generating a device that blinks two LEDs in an alternating pattern every second, on the Arduino Uno platform. 
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"LED", "name":"D1", "value":"red", "notes":"alternating LED 1. Standard voltage range (2-3.3V)."},
+    {"part":"LED", "name","D2", "value":"white", "notes":"alternating LED 2. Standard voltage range (2-3.3V)."},
+    {"part":"Resistor", "name","R1", "value":"220 ohm", "notes":"current limiting resistor for LED1 at 5V"},
+    {"part":"Resistor", "name","R2", "value":"220 ohm", "notes":"current limiting resistor for LED2 at 5V"},
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "D1": ["anode", "cathode"],
+    "D2": ["anode", "cathode"],
+    "R1": ["1", "2"],
+    "R2": ["1", "2]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"D1", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D1 cathode to Uno GND
+    [{"name":"D1", "pin":"anode"}, {"name": "R1", "pin":"2"}],          # Connect D1 anode to pin 2 of R1 (current limiting resistor)
+    [{"name":"R1", "pin":"1"}, {"name": "uno", "pin":"D5"}],            # Connect pin 1 of R1 (current limiting resistor) to Uno Digital I/O 5 (D5), to activate/deactivate D1
+    [{"name":"D2", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D2 cathode to Uno GND
+    [{"name":"D2", "pin":"anode"}, {"name": "R2", "pin":"2"}],          # Connect D2 anode to pin 2 of R2 (current limiting resistor)
+    [{"name":"R2", "pin":"1"}, {"name": "uno", "pin":"D6"}],            # Connect pin 1 of R2 (current limiting resistor) to Uno Digital I/O 5 (D6), to activate/deactivate D2
+]
+```
+
+Arduino Uno Code:
+```
+// Alternating blink
+// This code interfaces with a circuit that has two LEDS that blink in an alternating pattern.
+// The pattern changes every second.
+
+// LED 1 on Digital I/O 5
+#define PIN_LED1 5
+// LED 2 on Digital I/O 6
+#define PIN_LED2 6
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+    // Initialize LED pins to output mode
+    pinMode(PIN_LED1, OUTPUT);
+    pinMode(PIN_LED2, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 ON
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 OFF
+    delay(1000);                      // wait for a second
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 OFF
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 ON
+    delay(1000);                      // wait for a second
+}
+```
+
+Instructions:
+```
+- This code uses only standard libraries. No additional libraries are required in the library manager.
+- Assemble circuit and program as normal. 
+```
+
+Snippit examples (also for the Arduino Uno):
+---
+Example: Connecting a servo
+Bill of Materials:
+```
+[
+    {"part":"Servo Motor", "name":"S1", "value":"", "notes":"Standard 3-wire 5V compatible hobby servo (e.g. SG90)"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Servo Motor": ["VCC", "GND", "signal"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D3"}], # Connect Servo 1 signal to Uno D3
+    [{"name":"S1", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect Servo 1 VCC to Uno 5V
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect Servo 1 GND to Uno GND
+]
+```
+---
+
+Example: Connecting a button (pull-up)
+Bill of Materials:
+```
+[
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}], # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}], # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}], # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}] # Connect Button pin 2 to GND
+]
+```
+---
+
+Example: This is a case of what NOT to do.
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"inputs"}, {"name": "uno", "pin":"D5-D10"}] # BAD: This does not list each connection individually. It is not clear which pin on the IC is connected to which pin on the Uno.
+]
+```
+---
+Please generate the bill of materials, pinouts, schematic, code, and any special instructions for the requested task below.  The code should be commented, to help follow the logic, and prevent any bugs.The platform is: Arduino Uno.
+The task is: Create a device that reads the current magnetic field readings using a HMC5883L magnetometer.  The readings (x, y, z, and total field strength) should be output to the Serial port every second..
+
+---
+ Here is the output for the requested task:
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"HMC5883L", "name":"IC1", "value":"", "notes":"3-axis digital compass IC"},
+    {"part":"Resistor", "name":"R1", "value":"4.7k ohm", "notes":"Pull-up resistor for IC1 interrupt pin"},
+    {"part":"Capacitor", "name":"C1", "value":"0.1 uF", "notes":"Decoupling capacitor for IC1 VCC pin"}
+]
+```
+
+Pinouts: 
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "HMC5883L": ["VCC", "GND", "SCL", "SDA", "DRDY", "INT"],
+    "R1": ["1", "2"],
+    "C1": ["1", "2"] 
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"VCC"}, {"name": "uno", "pin":"3.3V"}],   # Connect IC1 VCC to Uno 3.3V
+    [{"name":"IC1", "pin":"GND"}, {"name": "uno", "pin":"GND"}],   # Connect IC1 GND to Uno GND
+    [{"name":"IC1", "pin":"SCL"}, {"name": "uno", "pin":"A5"}],    # Connect IC1 SCL to Uno A5 (I2C clock)
+    [{"name":"IC1", "pin":"SDA"}, {"name": "uno", "pin":"A4"}],    # Connect IC1 SDA to Uno A4 (I2C data)
+    [{"name":"IC1", "pin":"DRDY"}, {"name": "uno", "pin":"D2"}],   # Connect IC1 DRDY to Uno D2 (data ready interrupt)
+    [{"name":"IC1", "pin":"INT"}, {"name": "R1", "pin":"1"}],      # Connect IC1 INT to R1 pin 1 (pull-up resistor)
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"3.3V"}],    # Connect R1 pin 2 to Uno 3.3V (pull-up)
+    [{"name":"C1", "pin":"1"}, {"name": "IC1", "pin":"VCC"}],     # Connect C1 pin 1 to IC1 VCC (decoupling capacitor)
+    [{"name":"C1", "pin":"2"}, {"name": "uno", "pin":"GND"}]      # Connect C1 pin 2 to Uno GND (decoupling capacitor) 
+]
+```
+
+Arduino Uno Code:
+```
+// HMC5883L Magnetometer
+// This code interfaces with a HMC5883L 3-axis magnetometer IC over I2C.
+// It reads the x, y, z magnetic field values as well as total field strength and outputs them over serial once per second.
+
+#include <Wire.h>
+
+// HMC5883L I2C address
+#define ADDRESS 0x1E
+
+// Configuration register A 
+#define REG_A 0x00
+// Configuration register B 
+#define REG_B 0x01
+// Mode register
+#define REG_MODE 0x02
+// Data output X MSB register
+#define REG_X_MSB 0x03
+// Data output X LSB register
+#define REG_X_LSB 0x04
+// Data output Y MSB register
+#define REG_Y_MSB 0x05
+// Data output Y LSB register
+#define REG_Y_LSB 0x06
+// Data output Z MSB register
+#define REG_Z_MSB 0x07
+// Data output Z LSB register 
+#define REG_Z_LSB 0x08
+
+// Variables to store magnetometer data
+int x, y, z;
+float total;
+
+void setup() {
+    // Initialize serial and I2C communications
+    Serial.begin(9600);
+    Wire.begin();
+    
+    // Configure magnetometer
+    // 8 samples averaged, 15 Hz frequency, normal measurement mode
+    writeRegister(REG_A, 0b01110000); 
+    writeRegister(REG_B, 0b00100000);
+    writeRegister(REG_MODE, 0b00100000);
+}
+
+void loop() {
+    // Read x, y, z axis data
+    readAxes();
+    
+    // Calculate total field strength
+    total = sqrt(x*x + y*y + z*z);
+    
+    // Output to serial monitor
+    Serial.print("X: "); Serial.print(x); 
+    Serial.print("  Y: "); Serial.print(y);
+    Serial.print("  Z: "); Serial.print(z);
+    Serial.print("  Total: "); Serial.println(total);
+    
+    // Wait 1 second before repeating
+    delay(1000); 
+}
+
+// Write a register to the HMC5883L
+void writeRegister(byte reg, byte value) {
+  Wire.beginTransmission(ADDRESS);
+  Wire.write(reg);
+  Wire.write(value);
+  Wire.endTransmission();  
+}
+
+// Read x, y, z axes data from the HMC5883L 
+void readAxes() {
+  Wire.beginTransmission(ADDRESS);
+  Wire.write(REG_X_MSB);
+  Wire.endTransmission();
+  
+  Wire.requestFrom(ADDRESS, 6);
+  
+  // Read x-axis data
+  x = Wire.read()<<8; // X msb
+  x |= Wire.read();   // X lsb
+  
+  // Read y-axis data
+  y = Wire.read()<<8; // Y msb
+  y |= Wire.read();   // Y lsb
+  
+  // Read z-axis data
+  z = Wire.read()<<8; // Z msb 
+  z |= Wire.read();   // Z lsb
+}
+```
+
+Instructions:
+```
+- This code uses the built-in Wire library for I2C communication. No additional libraries are required.
+- The magnetometer is configured for 8 sample averaging, 15 Hz frequency, and normal measurement mode.
+- The total field strength is calculated from the raw x, y, z axis data.
+- Data is output over serial once per second.
+- Assemble circuit and upload code as normal. Ensure the HMC5883L is oriented correctly for your application.
+```
+---
+
+Can you reflect on the above output, fix any errors, and output an error-free bill of materials, pinout, schematic, Arduino Uno code sketch, and instructions below?
+Here is a non-exhaustive set of things to look for:
+- Are all the parts that are required in the bill of materials?  
+- Are there extra parts in the bill of materials that are not used?
+- Are all the parts in the bill of materials listed in the pinouts?
+- Do the pinouts list all the pins of each part?
+- What parts require connection to power and ground lines?  Are their power and ground lines connected in the schematic?  All power and lines must be explicitly connected.
+- What parts have digital or analog inputs or outputs?  Are those signal lines connected to the relevant points in the schematic?
+- What parts are passives, like resistors, capacitors, and other parts?  Are all their pins appropriately connected?  Do they have pins left unconnected?
+- Are all the required pins of each part connected in the schematic? 
+- Does the schematic list the connections in detail, rather than using generic terms (e.g. "input pins") or ranges (e.g. "D5-D10")?
+- Does the code function as intended?  
+- Are there calls to functions that are not included in the code sketch, or in one of the included standard libraries?  Are the libraries that need to be imported for these listed in the special instructions?
+- Are there special programming instructions?
+
+Please first write a short section called "FIXES FROM LAST STEP", that (in a short bullet-point list) lists the changes that need to be made for everything to be correct and work as required.
+
+Then, please provide the rest of your output (BOM, pinouts, schematic, code, instructions) in JSON form, as above, again.  When done, output a single line saying "### DONE ###".
+
+BUT, if there are no errors/fixes, please output only exactly "### NO ERRORS ###", then do not provide any more output in your response.
+
+
+----------------------------------------
+
+generalArea:
+Sensors
+
+specificArea:
+I2C Protocol - Magnetic
+
+platform:
+Arduino Uno
+
+taskName:
+sensors-magnetic
+
+taskDescription:
+Create a device that reads the current magnetic field readings using a HMC5883L magnetometer.  The readings (x, y, z, and total field strength) should be output to the Serial port every second.
+
+tasks:
+None
+
+filenameIn:
+text2device-task-descriptions.tsv
+
+pathOut:
+generated-toeval-1/
+
+all:
+True
+
+numGenerations:
+3
+
+genNum:
+0
+

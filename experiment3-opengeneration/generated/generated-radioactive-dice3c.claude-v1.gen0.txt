@@ -1,0 +1,426 @@
+task:
+Radioactive dice: a device that uses the radiation rate from a radiation watch type 5 sensor (which outputs a digital signal, active low, depending on whether a high-energy particle has struck it at that moment or not) to determine the random seed for an electronic dice.  The device should continually read the radiation sensor, accumulate the count, and use it to help change the random seed periodically. Every 3 seconds, the device should display the roll of a 6 sided dice on a Nixie tube. It should use an IN-12 nixie tube, and K155ID1 driver.
+
+microcontrollerPlatform:
+Arduino Uno
+
+temperature:
+0.0
+
+engine:
+claude-v1
+
+generationMode:
+ALL_AT_ONCE
+
+success:
+False
+
+numTokensPrompts:
+2157
+
+numTokensResponses:
+4156
+
+totalTokensSent:
+6393
+
+totalTokensReceived:
+4156
+
+costEstimateDollars:
+0.0
+
+responses:
+----------------------------------------
+response 0:
+ Here is the output for the Radioactive Dice task:
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"Radiation Sensor", "name":"S1", "value":"Watch Type 5", "notes":"Radiation sensor that outputs a digital signal when a high-energy particle is detected."},
+    {"part":"Nixie Tube", "name":"D1", "value":"IN-12", "notes":"6-digit nixie tube display"},
+    {"part":"Nixie Tube Driver", "name":"IC1", "value":"K155ID1", "notes":"Nixie tube driver IC, to interface nixie tubes with microcontroller."},
+    {"part":"Resistor", "name":"R1-R6", "value":"1K ohm", "notes":"Pull-down resistors for nixie tube inputs."},
+    {"part":"Capacitor", "name":"C1", "value":"0.1 uF", "notes":"Decoupling capacitor for nixie tube driver."} 
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "S1": ["signal", "GND"],
+    "D1": ["A", "B", "C", "D", "E", "F", "G", "DP"],
+    "IC1": ["1A1", "1A2", "1B1", "1B2", "1C1", "1C2", "2A1", "2A2", "2B1", "2B2", "2C1", "2C2", "3A1", "3A2", "3B1", "3B2", "3C1", "3C2", "4A1", "4A2", "4B1", "4B2", "4C1", "4C2", "5A1", "5A2", "5B1", "5B2", "5C1", "5C2", "6A1", "6A2", "6B1", "6B2", "6C1", "6C2", "7A", "7K", "8A", "8K", "9A", "9K", "10A", "10K", "11A", "11K", "12A", "12K", "13A", "13K", "14A", "14K", "15A", "15K", "16A", "16K"],
+    "R1-R6": ["1", "2"],
+    "C1": ["1", "2"] 
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D2"}],   # Connect radiation sensor signal to Uno D2
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}],   # Connect radiation sensor GND to Uno GND
+    [{"name":"D1", "pin":"A"}, {"name": "IC1", "pin":"1A1"}],     # Connect D1 A to IC1 1A1
+    [{"name":"D1", "pin":"B"}, {"name": "IC1", "pin":"2A1"}],     # Connect D1 B to IC1 2A1
+    [{"name":"D1", "pin":"C"}, {"name": "IC1", "pin":"3A1"}],     # Connect D1 C to IC1 3A1
+    [{"name":"D1", "pin":"D"}, {"name": "IC1", "pin":"4A1"}],     # Connect D1 D to IC1 4A1
+    [{"name":"D1", "pin":"E"}, {"name": "IC1", "pin":"5A1"}],     # Connect D1 E to IC1 5A1
+    [{"name":"D1", "pin":"F"}, {"name": "IC1", "pin":"6A1"}],     # Connect D1 F to IC1 6A1
+    [{"name":"D1", "pin":"G"}, {"name": "IC1", "pin":"7A"}],      # Connect D1 G to IC1 7A
+    [{"name":"D1", "pin":"DP"}, {"name": "IC1", "pin":"8A"}],     # Connect D1 DP to IC1 8A
+    [{"name":"IC1", "pin":"1A2"}, {"name": "R1", "pin":"1"}],     # Connect IC1 1A2 to R1 pin 1 (pull-down)
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"GND"}],     # Connect R1 pin 2 to Uno GND
+    [{"name":"IC1", "pin":"2A2"}, {"name": "R2", "pin":"1"}],     # Connect IC1 2A2 to R2 pin 1 (pull-down)
+    [{"name":"R2", "pin":"2"}, {"name": "uno", "pin":"GND"}],     # Connect R2 pin 2 to Uno GND
+    [{"name":"IC1", "pin":"3A2"}, {"name": "R3", "pin":"1"}],     # Connect IC1 3A2 to R3 pin 1 (pull-down)
+    [{"name":"R3", "pin":"2"}, {"name": "uno", "pin":"GND"}],     # Connect R3 pin 2 to Uno GND
+    [{"name":"IC1", "pin":"4A2"}, {"name": "R4", "pin":"1"}],     # Connect IC1 4A2 to R4 pin 1 (pull-down)
+    [{"name":"R4", "pin":"2"}, {"name": "uno", "pin":"GND"}],     # Connect R4 pin 2 to Uno GND
+    [{"name":"IC1", "pin":"5A2"}, {"name": "R5", "pin":"1"}],     # Connect IC1 5A2 to R5 pin 1 (pull-down)
+    [{"name":"R5", "pin":"2"}, {"name": "uno", "pin":"GND"}],     # Connect R5 pin 2 to Uno GND
+    [{"name":"IC1", "pin":"6A2"}, {"name": "R6", "pin":"1"}],     # Connect IC1 6A2 to R6 pin 1 (pull-down)
+    [{"name":"R6", "pin":"2"}, {"name": "uno", "pin":"GND"}],     # Connect R6 pin 2 to Uno GND
+    [{"name":"IC1", "pin":"7K"}, {"name": "uno", "pin":"5V"}],    # Connect IC1 7K (anode voltage) to Uno 5V
+    [{"name":"IC1", "pin":"9K"}, {"name": "uno", "pin":"GND"}],   # Connect IC1 9K (cathode voltage) to Uno GND
+    [{"name":"IC1", "pin":"16A"}, {"name": "uno", "pin":"D3"}],   # Connect IC1 16A (blanking input) to Uno D3
+    [{"name":"IC1", "pin":"1C1"}, {"name": "C1", "pin":"1"}],     # Connect IC1 1C1 to C1 pin 1
+    [{"name":"C1", "pin":"2"}, {"name": "uno", "pin":"GND"}]      # Connect C1 pin 2 to Uno GND
+]
+```
+
+Arduino Uno Code:
+```
+// Radioactive Dice
+// This code interfaces with a circuit that displays a random roll of a 6-sided 
+// dice on a nixie tube display. The random seed is determined by a radiation 
+// sensor that detects high-energy particles.
+
+// Radiation sensor on Digital I/O 2
+#define PIN_RADIATION 2  
+// Nixie tube blanking input on Digital I/O 3
+#define PIN_BLANK 3
+
+// Variables
+int radiationCount;      // Count of radiation detections 
+int diceRoll;            // Current dice roll
+unsigned long lastRoll;  // Time of last dice roll
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // Initialize pins
+  pinMode(PIN_RADIATION, INPUT);
+  pinMode(PIN_BLANK, OUTPUT);
+  
+  // Initialize variables
+  radiationCount = 0;
+  diceRoll = 1;
+  lastRoll = 0;
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  // Check for radiation detection
+  if (digitalRead(PIN_RADIATION) == LOW) {
+    radiationCount++;  // Increment radiation count
+  }
+  
+  // Check if Here is the output for the Radioactive Dice task:
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"Radiation Sensor", "name":"S1", "value":"Watch Type 5", "notes":"Radiation sensor that outputs a digital signal when a high-energy particle is detected."},
+    {"part":"Nixie Tube", "name":"D1", "value":"IN-12", "notes":"6-digit nixie tube display"},
+    {"part":"Nixie Tube Driver", "name":"IC1", "value":"K155ID1", "notes":"Nixie tube driver IC, to interface nixie tubes with microcontroller."},
+    {"part":"Resistor", "name":"R1-R6", "value":"1K ohm", "notes":"Pull-down resistors for nixie tube inputs."},
+    {"part":"Capacitor", "name":"C1", "value":"0.1 uF", "notes":"Decoupling capacitor for nixie tube driver."}  
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "S1": ["signal", "GND"],
+    "D1": ["A", "B", "C", "D", "E", "F", "G", "DP"],
+    "IC1": ["1A1", "1A2", "1B1", "1B2", "1C1", "1C2", "2A1", "2A2", "2B1", "2B2", "2C1", "2C2", "3A1", "3A2", "3B1", "3B2", "3C1", "3C2", "4A1", "4A2", "4B1", "4B2", "4C1", "4C2", "5A1", "5A2", "5B1", "5B2", "5C1", "5C2", "6A1", "6A2", "6B1", "6B2", "6C1", "6C2", "7A", "7K", "8A", "8K", "9A", "9K", "10A", "10K", "11A", "11K", "12A", "12K", "13A", "13K", "14A", "14K", "15A", "15K", "16A", "16K"],
+    "R1-R6": ["1", "2"],
+    "C1": ["1", "2"]  
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D2"}],   # Connect radiation sensor signal to Uno D2
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}],   # Connect radiation sensor GND to Uno GND
+    [{"name":"D1", "pin":"A"}, {"name": "IC1", "pin":"1A1"}],     # Connect D1 A to IC1 1A1
+    [{"name":"D1", "pin":"B"}, {"name": "IC1", "pin":"2A1"}],     # Connect D1 B to IC1 2A1
+    [{"name":"D1", "pin":"C"}, {"name": "IC1", "pin":"3A1"}],     # Connect D1 C to IC1 3A1
+    [{"name":"D1", "pin":"D"}, {"name": "IC1", "pin":"4A1"}],     # Connect D1 D to IC1 4A1
+    [{"name":"D1", "pin":"E"}, {"name": "IC1", "pin":"5A1"}],     # Connect D1 E to IC1 5A1
+    [{"name":"D1", "pin":"F"}, {"name": "IC1", "pin":"6A1"}],     # Connect D1 F to IC1 6A1
+    [{"name":"D1", "pin":"G"}, {"name": "IC1", "pin":"7A"}],      # Connect D1 G to IC1 7A
+    [{"name":"D1", "pin":"DP"}, {"name": "IC1", "pin":"8A"}],     # Connect D1 DP to IC1 8A
+    [{"name":"IC1", "pin":"1A2"}, {"name": "R1", "pin":"1"}],     # Connect IC1 1A2 to R1 pin 1 (pull-down)
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"GND"}],     # Connect R1 pin 2 to Uno GND
+    [{"name":"IC1", "pin":"2A2"}, {"name": "R2", "pin":"1"}],     # Connect IC1 2A2 to R2 pin 1 (pull-down)
+    [{"name":"R2", "pin":"2"}, {"name": "uno", "pin":"GND"}],     # Connect R2 pin 2 to Uno GND
+    [{"name":"IC1", "pin":"3A2"}, {"name": "R3", "pin":"1"}],     # Connect IC1 3A2 to R3 pin 1 (pull-down)
+    [{"name":"R3", "pin":"2"}, {"name": "uno", "pin":"GND"}],     # Connect R3 pin 2 to Uno GND
+    [{"name":"IC1", "pin":"4A2"}, {"name": "R4", "pin":"1"}],     # Connect IC1 4A2 to R4 pin 1 (pull-down)
+    [{"name":"R4", "pin":"2"}, {"name": "uno", "pin":"GND"}],     # Connect R4 pin 2 to Uno GND
+    [{"name":"IC1", "pin":"5A2"}, {"name": "R5", "pin":"1"}],     # Connect IC1 5A2 to R5 pin 1 (pull-down)
+    [{"name":"R5", "pin":"2"}, {"name": "uno", "pin":"GND"}],     # Connect R5 pin 2 to Uno GND
+    [{"name":"IC1", "pin":"6A2"}, {"name": "R6", "pin":"1"}],     # Connect IC1 6A2 to R6 pin 1 (pull-down)
+    [{"name":"R6", "pin":"2"}, {"name": "uno", "pin":"GND"}],     # Connect R6 pin 2 to Uno GND
+    [{"name":"IC1", "pin":"7K"}, {"name": "uno", "pin":"5V"}],    # Connect IC1 7K (anode voltage) to Uno 5V
+    [{"name":"IC1", "pin":"9K"}, {"name": "uno", "pin":"GND"}],   # Connect IC1 9K (cathode voltage) to Uno GND
+    [{"name":"IC1", "pin":"16A"}, {"name": "uno", "pin":"D3"}],   # Connect IC1 16A (blanking input) to Uno D3
+    [{"name":"IC1", "pin":"1C1"}, {"name": "C1", "pin":"1"}],     # Connect IC1 1C1 to C1 pin 1
+    [{"name":"C1", "pin":"2"}, {"name": "uno", "pin":"GND"}]      # Connect C1 pin 2 to Uno GND  
+]
+```
+
+Arduino Uno Code:
+```
+// Radioactive Dice
+// This code interfaces with a circuit that displays a random roll of a 6-sided  
+// dice on a nixie tube display. The random seed is determined by a radiation  
+// sensor that detects high-energy particles.
+
+// Radiation sensor on Digital I/O 2  
+#define PIN_RADIATION 2   
+// Nixie tube blanking input on Digital I/O 3
+#define PIN_BLANK 3
+
+// Variables
+int radiationCount;      // Count of radiation detections  
+int diceRoll;            // Current dice roll
+unsigned long lastRoll;  // Time of last dice roll
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // Initialize pins
+  pinMode(PIN_RADIATION, INPUT);
+  pinMode(PIN_BLANK, OUTPUT);
+  
+  // Initialize variables
+  radiationCount = 0;
+  diceRoll = 1;
+  lastRoll = 0;
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  // Check for radiation detection
+  if (digitalRead(PIN_RADIATION) == LOW) {
+    radiationCount++;  // Increment radiation count
+  }
+  
+  //
+
+----------------------------------------
+
+prompts:
+----------------------------------------
+prompt 0:
+You are DeveloperGPT, the most advanced AI developer tool on the planet.  You answer any coding question, and provide real useful example code using code blocks.  Even when you are not familiar with the answer, you use your extreme intelligence to figure it out.
+Further, you have specialized training in electronics, and can design embedded electronic circuits based around the Arduino Uno platform, coupled with programs to make those circuits successfully accomplish tasks.
+Your task is to: Radioactive dice: a device that uses the radiation rate from a radiation watch type 5 sensor (which outputs a digital signal, active low, depending on whether a high-energy particle has struck it at that moment or not) to determine the random seed for an electronic dice.  The device should continually read the radiation sensor, accumulate the count, and use it to help change the random seed periodically. Every 3 seconds, the device should display the roll of a 6 sided dice on a Nixie tube. It should use an IN-12 nixie tube, and K155ID1 driver.
+
+Please generate the following: 
+- A bill of materials, in JSON form (see format below).  
+- A pinout, in JSON form (see format below). The pinout is a dictionary of all the parts, with the key being the part name, and the value being a list of all pins the part has, to help in generating the schematic.
+- A schematic, in JSON form (see format below). Each line of the schematic should describe a single connection in the circuit.
+- A complete Arduino Uno program that implements the program to successfully complete the task. 
+Each section should be between code blocks ```.
+- A brief set of special instructions, in point form, if required.
+
+
+Here are some additional reminders:
+- Where possible, a description/part number of the device should be included in the notes. Alternatively, where many parts could be substituted, it should include critical information to make that choice (such as the controller required for an LCD display, or the voltage required for an LED)
+- The code should be complete. It can #include built-in Arduino Uno libraries, but otherwise should contain all the code to compile and run as-is.
+
+    
+Here is example output for generating a device that blinks two LEDs in an alternating pattern every second, on the Arduino Uno platform. 
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"LED", "name":"D1", "value":"red", "notes":"alternating LED 1. Standard voltage range (2-3.3V)."},
+    {"part":"LED", "name","D2", "value":"white", "notes":"alternating LED 2. Standard voltage range (2-3.3V)."},
+    {"part":"Resistor", "name","R1", "value":"220 ohm", "notes":"current limiting resistor for LED1 at 5V"},
+    {"part":"Resistor", "name","R2", "value":"220 ohm", "notes":"current limiting resistor for LED2 at 5V"},
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "D1": ["anode", "cathode"],
+    "D2": ["anode", "cathode"],
+    "R1": ["1", "2"],
+    "R2": ["1", "2]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"D1", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D1 cathode to Uno GND
+    [{"name":"D1", "pin":"anode"}, {"name": "R1", "pin":"2"}],          # Connect D1 anode to pin 2 of R1 (current limiting resistor)
+    [{"name":"R1", "pin":"1"}, {"name": "uno", "pin":"D5"}],            # Connect pin 1 of R1 (current limiting resistor) to Uno Digital I/O 5 (D5), to activate/deactivate D1
+    [{"name":"D2", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D2 cathode to Uno GND
+    [{"name":"D2", "pin":"anode"}, {"name": "R2", "pin":"2"}],          # Connect D2 anode to pin 2 of R2 (current limiting resistor)
+    [{"name":"R2", "pin":"1"}, {"name": "uno", "pin":"D6"}],            # Connect pin 1 of R2 (current limiting resistor) to Uno Digital I/O 5 (D6), to activate/deactivate D2
+]
+```
+
+Arduino Uno Code:
+```
+// Alternating blink
+// This code interfaces with a circuit that has two LEDS that blink in an alternating pattern.
+// The pattern changes every second.
+
+// LED 1 on Digital I/O 5
+#define PIN_LED1 5
+// LED 2 on Digital I/O 6
+#define PIN_LED2 6
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+    // Initialize LED pins to output mode
+    pinMode(PIN_LED1, OUTPUT);
+    pinMode(PIN_LED2, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 ON
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 OFF
+    delay(1000);                      // wait for a second
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 OFF
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 ON
+    delay(1000);                      // wait for a second
+}
+```
+
+Instructions:
+```
+- This code uses only standard libraries. No additional libraries are required in the library manager.
+- Assemble circuit and program as normal. 
+```
+
+Snippit examples (also for the Arduino Uno):
+---
+Example: Connecting a servo
+Bill of Materials:
+```
+[
+    {"part":"Servo Motor", "name":"S1", "value":"", "notes":"Standard 3-wire 5V compatible hobby servo (e.g. SG90)"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Servo Motor": ["VCC", "GND", "signal"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D3"}], # Connect Servo 1 signal to Uno D3
+    [{"name":"S1", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect Servo 1 VCC to Uno 5V
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect Servo 1 GND to Uno GND
+]
+```
+---
+
+Example: Connecting a button (pull-up)
+Bill of Materials:
+```
+[
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}], # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}], # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}], # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}] # Connect Button pin 2 to GND
+]
+```
+---
+
+Example: This is a case of what NOT to do.
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"inputs"}, {"name": "uno", "pin":"D5-D10"}] # BAD: This does not list each connection individually. It is not clear which pin on the IC is connected to which pin on the Uno.
+]
+```
+---
+Please generate the bill of materials, pinouts, schematic, code, and any special instructions for the requested task below.  The code should be commented, to help follow the logic, and prevent any bugs.The platform is: Arduino Uno.
+The task is: Radioactive dice: a device that uses the radiation rate from a radiation watch type 5 sensor (which outputs a digital signal, active low, depending on whether a high-energy particle has struck it at that moment or not) to determine the random seed for an electronic dice.  The device should continually read the radiation sensor, accumulate the count, and use it to help change the random seed periodically. Every 3 seconds, the device should display the roll of a 6 sided dice on a Nixie tube. It should use an IN-12 nixie tube, and K155ID1 driver..
+
+
+----------------------------------------
+
+generalArea:
+Logic
+
+specificArea:
+Uncommon parts - nixie and radiation sensor
+
+platform:
+Arduino Uno
+
+taskName:
+radioactive-dice3c
+
+taskDescription:
+Radioactive dice: a device that uses the radiation rate from a radiation watch type 5 sensor (which outputs a digital signal, active low, depending on whether a high-energy particle has struck it at that moment or not) to determine the random seed for an electronic dice.  The device should continually read the radiation sensor, accumulate the count, and use it to help change the random seed periodically. Every 3 seconds, the device should display the roll of a 6 sided dice on a Nixie tube. It should use an IN-12 nixie tube, and K155ID1 driver.
+
+tasks:
+None
+
+filenameIn:
+text2device-task-descriptions.tsv
+
+pathOut:
+generated-toeval-1/
+
+all:
+True
+
+numGenerations:
+3
+
+genNum:
+0
+

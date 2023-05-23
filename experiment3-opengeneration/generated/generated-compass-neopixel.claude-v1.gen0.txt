@@ -1,0 +1,749 @@
+task:
+make a compass, that shows the current direction using a neopixel ring. The neopixel ring should have 16 neopixels. The north neopixel should always be green. The current heading neopixel should be blue.
+
+microcontrollerPlatform:
+Arduino Uno
+
+temperature:
+0.0
+
+engine:
+claude-v1
+
+generationMode:
+ALL_AT_ONCE
+
+success:
+True
+
+numTokensPrompts:
+5662
+
+numTokensResponses:
+2731
+
+totalTokensSent:
+5662
+
+totalTokensReceived:
+2730
+
+costEstimateDollars:
+0.0
+
+responses:
+----------------------------------------
+response 0:
+ Here is the output for the requested task:
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"NeoPixel Ring 16", "name":"ring", "value":"", "notes":"WS2812B addressable RGB LED ring with 16 LEDs"}
+    {"part":"MPU-6050 6DOF IMU", "name":"imu", "value":"", "notes":"3-axis gyroscope and 3-axis accelerometer"}
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for MPU-6050 interrupt pin"}
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "NeoPixel Ring 16": ["DI", "GND", "5V"],
+    "MPU-6050 6DOF IMU": ["VCC", "GND", "SCL", "SDA", "INT"],
+    "R1": ["1", "2"] 
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"ring", "pin":"DI"}, {"name": "uno", "pin":"D6"}],   # Connect NeoPixel ring data in to Uno Digital I/O 6
+    [{"name":"ring", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect NeoPixel ring ground to Uno ground
+    [{"name":"ring", "pin":"5V"}, {"name": "uno", "pin":"5V"}],   # Connect NeoPixel ring 5V to Uno 5V
+    [{"name":"imu", "pin":"VCC"}, {"name": "uno", "pin":"3.3V"}],# Connect MPU-6050 VCC to Uno 3.3V
+    [{"name":"imu", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect MPU-6050 GND to Uno GND
+    [{"name":"imu", "pin":"SCL"}, {"name": "uno", "pin":"A5"}],  # Connect MPU-6050 SCL to Uno A5 (I2C clock)
+    [{"name":"imu", "pin":"SDA"}, {"name": "uno", "pin":"A4"}],  # Connect MPU-6050 SDA to Uno A4 (I2C data)
+    [{"name":"imu", "pin":"INT"}, {"name": "R1", "pin":"1"}],   # Connect MPU-6050 INT to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"D2"}]     # Connect R1 pin 2 to Uno D2 (interrupt pin)
+]
+```
+
+Arduino Uno Code:
+```
+// Compass using NeoPixel ring and MPU-6050
+// This code interfaces with a NeoPixel ring and MPU-6050 6DOF IMU
+// to display the current heading on the ring. North is green. Current heading is blue.
+
+#include <Adafruit_NeoPixel.h>
+#include <MPU6050_tockn.h>
+#include <Wire.h>
+
+// NeoPixel ring on Digital I/O 6
+#define PIN_NEOPIXEL 6
+#define NUMPIXELS 16
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+
+// MPU-6050 I2C address
+#define MPU6050_ADDR 0x68
+// MPU-6050 instance
+MPU6050 mpu6050(MPU6050_ADDR);
+
+// Heading variables
+float heading;
+int heading_pixel;
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // Initialize NeoPixel ring
+  pixels.begin();
+  
+  // Set north pixel to green
+  pixels.setPixelColor(0, pixels.Color(0, 255, 0)); 
+  
+  // Initialize MPU-6050
+  Wire.begin();
+  mpu6050.begin();
+  mpu6050.calcGyroOffsets(true);
+  
+  // Attach interrupt to get heading data
+  attachInterrupt(digitalPinToInterrupt(2), read_heading, RISING);
+}
+
+// Interrupt function to read heading
+void read_heading() {
+  // Read raw accelerometer and gyro data
+  mpu6050.update();
+  
+  // Calculate heading
+  heading = mpu6050.getHeading();
+  
+  // Convert to pixel and set
+  heading_pixel = int(heading * (NUMPIXELS / 360.0));
+  pixels.setPixelColor(heading_pixel, pixels.Color(0, 0, 255)); 
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  // Update NeoPixel ring
+  pixels.show();
+}
+```
+
+Instructions:
+```
+- The MPU-6050 interrupt pin is attached to Uno D2. Whenever new data is available, the read_heading interrupt function is called to update the heading and set the correct pixel.
+- The NeoPixel ring is updated in the loop function to show the changes.
+- No additional libraries are required beyond the built-in Arduino libraries.
+```
+
+----------------------------------------
+----------------------------------------
+response 1:
+ FIXES FROM LAST STEP
+- Add capacitor between NeoPixel ring 5V and GND for power supply filtering 
+- Add pull-down resistor between MPU-6050 INT and GND
+- Add power and ground connections for R1
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"NeoPixel Ring 16", "name":"ring", "value":"", "notes":"WS2812B addressable RGB LED ring with 16 LEDs"} 
+    {"part":"MPU-6050 6DOF IMU", "name":"imu", "value":"", "notes":"3-axis gyroscope and 3-axis accelerometer"}
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for MPU-6050 interrupt pin"}
+    {"part":"Resistor", "name":"R2", "value":"10k ohm", "notes":"Pull-down resistor for MPU-6050 interrupt pin"}
+    {"part":"Capacitor", "name":"C1", "value":"0.1 uF", "notes":"Power supply filtering for NeoPixel ring"} 
+]
+```
+
+Pinouts: 
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "NeoPixel Ring 16": ["DI", "GND", "5V"],
+    "MPU-6050 6DOF IMU": ["VCC", "GND", "SCL", "SDA", "INT"],
+    "R1": ["1", "2"],
+    "R2": ["1", "2"],
+    "C1": ["1", "2"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"ring", "pin":"DI"}, {"name": "uno", "pin":"D6"}],   # Connect NeoPixel ring data in to Uno Digital I/O 6
+    [{"name":"ring", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect NeoPixel ring ground to Uno ground
+    [{"name":"ring", "pin":"5V"}, {"name": "C1", "pin":"1"}],   # Connect NeoPixel ring 5V to C1 pin 1
+    [{"name":"C1", "pin":"2"}, {"name": "uno", "pin":"5V"}],   # Connect C1 pin 2 to Uno 5V
+    [{"name":"imu", "pin":"VCC"}, {"name": "uno", "pin":"3.3V"}],# Connect MPU-6050 VCC to Uno 3.3V
+    [{"name":"imu", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect MPU-6050 GND to Uno GND
+    [{"name":"imu", "pin":"SCL"}, {"name": "uno", "pin":"A5"}],  # Connect MPU-6050 SCL to Uno A5 (I2C clock)
+    [{"name":"imu", "pin":"SDA"}, {"name": "uno", "pin":"A4"}],  # Connect MPU-6050 SDA to Uno A4 (I2C data)
+    [{"name":"imu", "pin":"INT"}, {"name": "R1", "pin":"1"}],   # Connect MPU-6050 INT to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"D2"}],     # Connect R1 pin 2 to Uno D2 (interrupt pin)
+    [{"name":"R2", "pin":"1"}, {"name": "imu", "pin":"INT"}],   # Connect R2 pin 1 to MPU-6050 INT
+    [{"name":"R2", "pin":"2"}, {"name": "uno", "pin":"GND"}]     # Connect R2 pin 2 to Uno GND
+]
+```
+
+Arduino Uno Code:
+```
+// Compass using NeoPixel ring and MPU-6050
+// This code interfaces with a NeoPixel ring and MPU-6050 6DOF IMU
+// to display the current heading on the ring. North is green. Current heading is blue.
+
+#include <Adafruit_NeoPixel.h>
+#include <MPU6050_tockn.h>
+#include <Wire.h>
+
+// NeoPixel ring on Digital I/O 6
+#define PIN_NEOPIXEL 6
+#define NUMPIXELS 16
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+
+// MPU-6050 I2C address
+#define MPU6050_ADDR 0x68
+// MPU-6050 instance
+MPU6050 mpu6050(MPU6050_ADDR);
+
+// Heading variables
+float heading;
+int heading_pixel;
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // Initialize NeoPixel ring
+  pixels.begin();
+  
+  // Set north pixel to green
+  pixels.setPixelColor(0, pixels.Color(0, 255, 0)); 
+  
+  // Initialize MPU-6050
+  Wire.begin();
+  mpu6050.begin();
+  mpu6050.calcGyroOffsets(true);
+  
+  // Attach interrupt to get heading data
+  attachInterrupt(digitalPinToInterrupt(2), read_heading, RISING);
+}
+
+// Interrupt function to read heading
+void read_heading() {
+  // Read raw accelerometer and gyro data
+  mpu6050.update();
+  
+  // Calculate heading
+  heading = mpu6050.getHeading();
+  
+  // Convert to pixel and set
+  heading_pixel = int(heading * (NUMPIXELS / 360.0));
+  pixels.setPixelColor(heading_pixel, pixels.Color(0, 0, 255)); 
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  // Update NeoPixel ring
+  pixels.show();
+}
+```
+
+Instructions:
+```
+- The MPU-6050 interrupt pin is attached to Uno D2. Whenever new data is available, the read_heading interrupt function is called to update the heading and set the correct pixel.
+- The NeoPixel ring is updated in the loop function to show the changes.
+- No additional libraries are required beyond the built-in Arduino libraries.
+- A 0.1 uF capacitor is used between the NeoPixel ring 5V and GND pins for power supply filtering.
+- A 10k ohm pull-down resistor is used between the MPU-6050 INT pin and GND.
+```
+### DONE ###
+
+----------------------------------------
+
+prompts:
+----------------------------------------
+prompt 0:
+You are DeveloperGPT, the most advanced AI developer tool on the planet.  You answer any coding question, and provide real useful example code using code blocks.  Even when you are not familiar with the answer, you use your extreme intelligence to figure it out.
+Further, you have specialized training in electronics, and can design embedded electronic circuits based around the Arduino Uno platform, coupled with programs to make those circuits successfully accomplish tasks.
+Your task is to: make a compass, that shows the current direction using a neopixel ring. The neopixel ring should have 16 neopixels. The north neopixel should always be green. The current heading neopixel should be blue.
+
+Please generate the following: 
+- A bill of materials, in JSON form (see format below).  
+- A pinout, in JSON form (see format below). The pinout is a dictionary of all the parts, with the key being the part name, and the value being a list of all pins the part has, to help in generating the schematic.
+- A schematic, in JSON form (see format below). Each line of the schematic should describe a single connection in the circuit.
+- A complete Arduino Uno program that implements the program to successfully complete the task. 
+Each section should be between code blocks ```.
+- A brief set of special instructions, in point form, if required.
+
+
+Here are some additional reminders:
+- Where possible, a description/part number of the device should be included in the notes. Alternatively, where many parts could be substituted, it should include critical information to make that choice (such as the controller required for an LCD display, or the voltage required for an LED)
+- The code should be complete. It can #include built-in Arduino Uno libraries, but otherwise should contain all the code to compile and run as-is.
+
+    
+Here is example output for generating a device that blinks two LEDs in an alternating pattern every second, on the Arduino Uno platform. 
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"LED", "name":"D1", "value":"red", "notes":"alternating LED 1. Standard voltage range (2-3.3V)."},
+    {"part":"LED", "name","D2", "value":"white", "notes":"alternating LED 2. Standard voltage range (2-3.3V)."},
+    {"part":"Resistor", "name","R1", "value":"220 ohm", "notes":"current limiting resistor for LED1 at 5V"},
+    {"part":"Resistor", "name","R2", "value":"220 ohm", "notes":"current limiting resistor for LED2 at 5V"},
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "D1": ["anode", "cathode"],
+    "D2": ["anode", "cathode"],
+    "R1": ["1", "2"],
+    "R2": ["1", "2]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"D1", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D1 cathode to Uno GND
+    [{"name":"D1", "pin":"anode"}, {"name": "R1", "pin":"2"}],          # Connect D1 anode to pin 2 of R1 (current limiting resistor)
+    [{"name":"R1", "pin":"1"}, {"name": "uno", "pin":"D5"}],            # Connect pin 1 of R1 (current limiting resistor) to Uno Digital I/O 5 (D5), to activate/deactivate D1
+    [{"name":"D2", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D2 cathode to Uno GND
+    [{"name":"D2", "pin":"anode"}, {"name": "R2", "pin":"2"}],          # Connect D2 anode to pin 2 of R2 (current limiting resistor)
+    [{"name":"R2", "pin":"1"}, {"name": "uno", "pin":"D6"}],            # Connect pin 1 of R2 (current limiting resistor) to Uno Digital I/O 5 (D6), to activate/deactivate D2
+]
+```
+
+Arduino Uno Code:
+```
+// Alternating blink
+// This code interfaces with a circuit that has two LEDS that blink in an alternating pattern.
+// The pattern changes every second.
+
+// LED 1 on Digital I/O 5
+#define PIN_LED1 5
+// LED 2 on Digital I/O 6
+#define PIN_LED2 6
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+    // Initialize LED pins to output mode
+    pinMode(PIN_LED1, OUTPUT);
+    pinMode(PIN_LED2, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 ON
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 OFF
+    delay(1000);                      // wait for a second
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 OFF
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 ON
+    delay(1000);                      // wait for a second
+}
+```
+
+Instructions:
+```
+- This code uses only standard libraries. No additional libraries are required in the library manager.
+- Assemble circuit and program as normal. 
+```
+
+Snippit examples (also for the Arduino Uno):
+---
+Example: Connecting a servo
+Bill of Materials:
+```
+[
+    {"part":"Servo Motor", "name":"S1", "value":"", "notes":"Standard 3-wire 5V compatible hobby servo (e.g. SG90)"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Servo Motor": ["VCC", "GND", "signal"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D3"}], # Connect Servo 1 signal to Uno D3
+    [{"name":"S1", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect Servo 1 VCC to Uno 5V
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect Servo 1 GND to Uno GND
+]
+```
+---
+
+Example: Connecting a button (pull-up)
+Bill of Materials:
+```
+[
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}], # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}], # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}], # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}] # Connect Button pin 2 to GND
+]
+```
+---
+
+Example: This is a case of what NOT to do.
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"inputs"}, {"name": "uno", "pin":"D5-D10"}] # BAD: This does not list each connection individually. It is not clear which pin on the IC is connected to which pin on the Uno.
+]
+```
+---
+Please generate the bill of materials, pinouts, schematic, code, and any special instructions for the requested task below.  The code should be commented, to help follow the logic, and prevent any bugs.The platform is: Arduino Uno.
+The task is: make a compass, that shows the current direction using a neopixel ring. The neopixel ring should have 16 neopixels. The north neopixel should always be green. The current heading neopixel should be blue..
+
+
+----------------------------------------
+----------------------------------------
+prompt 1:
+You are DeveloperGPT, the most advanced AI developer tool on the planet.  You answer any coding question, and provide real useful example code using code blocks.  Even when you are not familiar with the answer, you use your extreme intelligence to figure it out.
+Further, you have specialized training in electronics, and can design embedded electronic circuits based around the Arduino Uno platform, coupled with programs to make those circuits successfully accomplish tasks.
+Your task is to: make a compass, that shows the current direction using a neopixel ring. The neopixel ring should have 16 neopixels. The north neopixel should always be green. The current heading neopixel should be blue.
+
+Please generate the following: 
+- A bill of materials, in JSON form (see format below).  
+- A pinout, in JSON form (see format below). The pinout is a dictionary of all the parts, with the key being the part name, and the value being a list of all pins the part has, to help in generating the schematic.
+- A schematic, in JSON form (see format below). Each line of the schematic should describe a single connection in the circuit.
+- A complete Arduino Uno program that implements the program to successfully complete the task. 
+Each section should be between code blocks ```.
+- A brief set of special instructions, in point form, if required.
+
+
+Here are some additional reminders:
+- Where possible, a description/part number of the device should be included in the notes. Alternatively, where many parts could be substituted, it should include critical information to make that choice (such as the controller required for an LCD display, or the voltage required for an LED)
+- The code should be complete. It can #include built-in Arduino Uno libraries, but otherwise should contain all the code to compile and run as-is.
+
+    
+Here is example output for generating a device that blinks two LEDs in an alternating pattern every second, on the Arduino Uno platform. 
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"LED", "name":"D1", "value":"red", "notes":"alternating LED 1. Standard voltage range (2-3.3V)."},
+    {"part":"LED", "name","D2", "value":"white", "notes":"alternating LED 2. Standard voltage range (2-3.3V)."},
+    {"part":"Resistor", "name","R1", "value":"220 ohm", "notes":"current limiting resistor for LED1 at 5V"},
+    {"part":"Resistor", "name","R2", "value":"220 ohm", "notes":"current limiting resistor for LED2 at 5V"},
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "D1": ["anode", "cathode"],
+    "D2": ["anode", "cathode"],
+    "R1": ["1", "2"],
+    "R2": ["1", "2]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"D1", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D1 cathode to Uno GND
+    [{"name":"D1", "pin":"anode"}, {"name": "R1", "pin":"2"}],          # Connect D1 anode to pin 2 of R1 (current limiting resistor)
+    [{"name":"R1", "pin":"1"}, {"name": "uno", "pin":"D5"}],            # Connect pin 1 of R1 (current limiting resistor) to Uno Digital I/O 5 (D5), to activate/deactivate D1
+    [{"name":"D2", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D2 cathode to Uno GND
+    [{"name":"D2", "pin":"anode"}, {"name": "R2", "pin":"2"}],          # Connect D2 anode to pin 2 of R2 (current limiting resistor)
+    [{"name":"R2", "pin":"1"}, {"name": "uno", "pin":"D6"}],            # Connect pin 1 of R2 (current limiting resistor) to Uno Digital I/O 5 (D6), to activate/deactivate D2
+]
+```
+
+Arduino Uno Code:
+```
+// Alternating blink
+// This code interfaces with a circuit that has two LEDS that blink in an alternating pattern.
+// The pattern changes every second.
+
+// LED 1 on Digital I/O 5
+#define PIN_LED1 5
+// LED 2 on Digital I/O 6
+#define PIN_LED2 6
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+    // Initialize LED pins to output mode
+    pinMode(PIN_LED1, OUTPUT);
+    pinMode(PIN_LED2, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 ON
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 OFF
+    delay(1000);                      // wait for a second
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 OFF
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 ON
+    delay(1000);                      // wait for a second
+}
+```
+
+Instructions:
+```
+- This code uses only standard libraries. No additional libraries are required in the library manager.
+- Assemble circuit and program as normal. 
+```
+
+Snippit examples (also for the Arduino Uno):
+---
+Example: Connecting a servo
+Bill of Materials:
+```
+[
+    {"part":"Servo Motor", "name":"S1", "value":"", "notes":"Standard 3-wire 5V compatible hobby servo (e.g. SG90)"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Servo Motor": ["VCC", "GND", "signal"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D3"}], # Connect Servo 1 signal to Uno D3
+    [{"name":"S1", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect Servo 1 VCC to Uno 5V
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect Servo 1 GND to Uno GND
+]
+```
+---
+
+Example: Connecting a button (pull-up)
+Bill of Materials:
+```
+[
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}], # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}], # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}], # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}] # Connect Button pin 2 to GND
+]
+```
+---
+
+Example: This is a case of what NOT to do.
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"inputs"}, {"name": "uno", "pin":"D5-D10"}] # BAD: This does not list each connection individually. It is not clear which pin on the IC is connected to which pin on the Uno.
+]
+```
+---
+Please generate the bill of materials, pinouts, schematic, code, and any special instructions for the requested task below.  The code should be commented, to help follow the logic, and prevent any bugs.The platform is: Arduino Uno.
+The task is: make a compass, that shows the current direction using a neopixel ring. The neopixel ring should have 16 neopixels. The north neopixel should always be green. The current heading neopixel should be blue..
+
+---
+ Here is the output for the requested task:
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"NeoPixel Ring 16", "name":"ring", "value":"", "notes":"WS2812B addressable RGB LED ring with 16 LEDs"}
+    {"part":"MPU-6050 6DOF IMU", "name":"imu", "value":"", "notes":"3-axis gyroscope and 3-axis accelerometer"}
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for MPU-6050 interrupt pin"}
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "NeoPixel Ring 16": ["DI", "GND", "5V"],
+    "MPU-6050 6DOF IMU": ["VCC", "GND", "SCL", "SDA", "INT"],
+    "R1": ["1", "2"] 
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"ring", "pin":"DI"}, {"name": "uno", "pin":"D6"}],   # Connect NeoPixel ring data in to Uno Digital I/O 6
+    [{"name":"ring", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect NeoPixel ring ground to Uno ground
+    [{"name":"ring", "pin":"5V"}, {"name": "uno", "pin":"5V"}],   # Connect NeoPixel ring 5V to Uno 5V
+    [{"name":"imu", "pin":"VCC"}, {"name": "uno", "pin":"3.3V"}],# Connect MPU-6050 VCC to Uno 3.3V
+    [{"name":"imu", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect MPU-6050 GND to Uno GND
+    [{"name":"imu", "pin":"SCL"}, {"name": "uno", "pin":"A5"}],  # Connect MPU-6050 SCL to Uno A5 (I2C clock)
+    [{"name":"imu", "pin":"SDA"}, {"name": "uno", "pin":"A4"}],  # Connect MPU-6050 SDA to Uno A4 (I2C data)
+    [{"name":"imu", "pin":"INT"}, {"name": "R1", "pin":"1"}],   # Connect MPU-6050 INT to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"D2"}]     # Connect R1 pin 2 to Uno D2 (interrupt pin)
+]
+```
+
+Arduino Uno Code:
+```
+// Compass using NeoPixel ring and MPU-6050
+// This code interfaces with a NeoPixel ring and MPU-6050 6DOF IMU
+// to display the current heading on the ring. North is green. Current heading is blue.
+
+#include <Adafruit_NeoPixel.h>
+#include <MPU6050_tockn.h>
+#include <Wire.h>
+
+// NeoPixel ring on Digital I/O 6
+#define PIN_NEOPIXEL 6
+#define NUMPIXELS 16
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+
+// MPU-6050 I2C address
+#define MPU6050_ADDR 0x68
+// MPU-6050 instance
+MPU6050 mpu6050(MPU6050_ADDR);
+
+// Heading variables
+float heading;
+int heading_pixel;
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // Initialize NeoPixel ring
+  pixels.begin();
+  
+  // Set north pixel to green
+  pixels.setPixelColor(0, pixels.Color(0, 255, 0)); 
+  
+  // Initialize MPU-6050
+  Wire.begin();
+  mpu6050.begin();
+  mpu6050.calcGyroOffsets(true);
+  
+  // Attach interrupt to get heading data
+  attachInterrupt(digitalPinToInterrupt(2), read_heading, RISING);
+}
+
+// Interrupt function to read heading
+void read_heading() {
+  // Read raw accelerometer and gyro data
+  mpu6050.update();
+  
+  // Calculate heading
+  heading = mpu6050.getHeading();
+  
+  // Convert to pixel and set
+  heading_pixel = int(heading * (NUMPIXELS / 360.0));
+  pixels.setPixelColor(heading_pixel, pixels.Color(0, 0, 255)); 
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  // Update NeoPixel ring
+  pixels.show();
+}
+```
+
+Instructions:
+```
+- The MPU-6050 interrupt pin is attached to Uno D2. Whenever new data is available, the read_heading interrupt function is called to update the heading and set the correct pixel.
+- The NeoPixel ring is updated in the loop function to show the changes.
+- No additional libraries are required beyond the built-in Arduino libraries.
+```
+---
+
+Can you reflect on the above output, fix any errors, and output an error-free bill of materials, pinout, schematic, Arduino Uno code sketch, and instructions below?
+Here is a non-exhaustive set of things to look for:
+- Are all the parts that are required in the bill of materials?  
+- Are there extra parts in the bill of materials that are not used?
+- Are all the parts in the bill of materials listed in the pinouts?
+- Do the pinouts list all the pins of each part?
+- What parts require connection to power and ground lines?  Are their power and ground lines connected in the schematic?  All power and lines must be explicitly connected.
+- What parts have digital or analog inputs or outputs?  Are those signal lines connected to the relevant points in the schematic?
+- What parts are passives, like resistors, capacitors, and other parts?  Are all their pins appropriately connected?  Do they have pins left unconnected?
+- Are all the required pins of each part connected in the schematic? 
+- Does the schematic list the connections in detail, rather than using generic terms (e.g. "input pins") or ranges (e.g. "D5-D10")?
+- Does the code function as intended?  
+- Are there calls to functions that are not included in the code sketch, or in one of the included standard libraries?  Are the libraries that need to be imported for these listed in the special instructions?
+- Are there special programming instructions?
+
+Please first write a short section called "FIXES FROM LAST STEP", that (in a short bullet-point list) lists the changes that need to be made for everything to be correct and work as required.
+
+Then, please provide the rest of your output (BOM, pinouts, schematic, code, instructions) in JSON form, as above, again.  When done, output a single line saying "### DONE ###".
+
+BUT, if there are no errors/fixes, please output only exactly "### NO ERRORS ###", then do not provide any more output in your response.
+
+
+----------------------------------------
+
+generalArea:
+Sensors
+
+specificArea:
+Sensors + Visualization
+
+platform:
+Arduino Uno
+
+taskName:
+compass-neopixel
+
+taskDescription:
+make a compass, that shows the current direction using a neopixel ring. The neopixel ring should have 16 neopixels. The north neopixel should always be green. The current heading neopixel should be blue.
+
+tasks:
+None
+
+filenameIn:
+text2device-task-descriptions.tsv
+
+pathOut:
+generated-toeval-1/
+
+all:
+True
+
+numGenerations:
+3
+
+genNum:
+0
+

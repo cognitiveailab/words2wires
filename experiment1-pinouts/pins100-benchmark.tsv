@@ -1,0 +1,112 @@
+# Passives		
+Resistor		1, 2
+Capacitor (unpolarized)		1, 2
+Capacitor (polarized)		+, -
+Diode		+, -
+Inductor		1, 2
+Potentiometer		1, wiper, 3
+20MhZ Crystal	Oscillator	1, 2
+# LEDs/etc		
+CDS cell		1, 2
+Thermistor		1, 2
+Photodiode		+, -
+LED		+, -
+RGB LED (common anode)		R, G, B, anode
+RGB LED (common cathode)		R, G, B, cathode
+7-segment display		a, b, c, d, e, f, g, dp, COM
+WS2812 (Neopixel)		DIN, DOUT, VCC, GND
+1mW 650nm Laser Diode		+, -
+# Buttons/Input		
+Push button		1, 2
+Single-pole single-throw switch		NO, COM
+Single-pole double-throw switch		NO, NC, COM
+Double-pole single-throw switch		NO1, COM1, NO2, COM2
+Double-pole double-throw switch		NO1, NC1, COM1, NO2, NC2, COM2
+Magnetic Reed Switch		1, 2
+Single-pole single-throw DIP switch (4 element)		NO1, COM1, NO2, COM2, NO3, COM3, NO4, COM4
+Analog 2-axis resistive joystick	(Nominally, at minimum, VCC, GND, outX, outY)	OUTX, OUTY, VCC, GND
+PEC11-4215F-S24	Rotary Encoder	A, B, C, SW_NO, SW_ COM
+# Motors/Output		
+DC Motor		+, -
+6-wire Unipolar Stepper Motor		COIL1A, COIL1_CENTER, COIL1B, COIL2A, COIL2_CENTER, COIL2B
+4-wire Bipolar Stepper Motor		COIL1A, COIL1B, COIL2A, COIL2B
+SG90 Hobby Servo		SIGNAL, VCC, GND
+Solenoid	Solenoid Coil	+, -
+# Misc. Output		
+Piezo Buzzer		+, -
+Speaker		+, -
+Peltier Junction	Thermal heater/cooler	+, -
+Single-pole double-throw relay		NO, NC, COM, COIL1, COIL2
+Double-pole double-throw relay		NO1, NC1, COM1, NO2, NC2, COM2, COIL1, COIL2
+16x2 LCD (HD44780 compatible)		GND, VDD, VE, RS, RW, EN, D0, D1, D2, D3, D4, D5, D6, D7, BLA, DLK
+# Power		
+9V battery		9V, GND
+AAA battery		1.5V, GND
+coin cell		+, -
+solar cell		+, -
+# Voltage Regulators		
+LM7805	Linear regulator (5V)	VIN, VOUT, GND
+LD1117V33C	3.3v regulator	VIN, VOUT, GND
+LM317	Adjustable regulator	VIN, VOUT, ADJUST
+L4931-5.0          	5V low-dropout linear voltage regulator	VIN, VOUT, GND
+L4931-3.3           	3.3V low-dropout linear voltage regulator	VIN, VOUT, GND
+# ICs (general)		
+555	Timer	GND, TRIGGER, OUT, #RESET, CONTROL, THRESHOLD, DISCHARGE, VCC
+556	Dual Timer	DISCHARGE1, THRESHOLD1, CONTROL1, RESET1, OUT1, TRIGGER1, GND, TRIGGER2, OUTPUT2, RESET2, CONTROL2, THRESHOLD2, DISCHARGE2, VCC
+741	Opamp	OFFSET NULL1, INVERTING INPUT (-), NON-INVERTING INPUT (+), V-, OFFSET NULL2, OUTPUT, V+, NC
+4N35 	Optocoupler	ANODE, CATHODE, NC, EMITTER, COLLECTOR, BASE
+L293D	H-Bridge Motor Driver	EN12, IN1, OUT1, GND1, GND2, OUT2, IN2, VCC2, EN34, IN3, OUT3, GND3, GND4, OUT4, IN4, VCC1
+MCP23008           	I2C 8 input/output port expander	SCL, SDA, A2, A1, A0, #RESET, NC, INT, VSS, GP0, GP1, GP2, GP3, GP4, GP5, GP6, GP7, VDD
+MCP23017            	I2C 16 input/output port expander	GPB0, GPB1, GPB2, GPB3, GPB4, GPB5, GPB6, GPB7, VDD, VSS, NC, SCL, SDA, NC, A0, A1, A2, #RESET, INTB, INTA, GPA0, GPA1, GPA2, GPA3, GPA4, GPA5, GPA6, GPA7
+PCF8574	8-bit I2C port expander	A0, A1, A2, P0, P1, P2, P3, GND, P4, P5, P6, P7, #INT, SCL, SDA, VDD
+Pololu DRV8434A Stepper Motor Driver Carrier		ENABLE, M0, M1, STL_MODE, TRQ_CNT/STL_TH, #SLEEP, STEP, DIR, STL_REP, GND, #FAULT, A1, A2, B2, B1, GND, VMOT
+FT232RL	USB to Serial converter	TXD, #DTR, #RTS, VCCIC, RXD, #RI, GND, NV, #DSR, #DCD, #CTS, CBUS4, CBUS2, CBUS3, USBDP, USBDM, 3V3OUT, GND, #RESET, VCC, GND, CBUS1, CBUS0, NC, AGND, TEST, OSCI, OSCO
+W25Q80BV	SPI Flash	#CS, DO, #WP, GND, DI, CLK, #HOLD, VCC
+# ICs (logic)		
+74HC00	Quad NAND	1A, 1B, 1Y, 2A, 2B, 2Y, GND, 3Y, 3A, 3B, 4Y, 4A, 4B, VCC
+74HC02	Quad NOR	1Y, 1A, 1B, 2Y, 2A, 2B, GND, 3A, 3B, 3Y, 3A, 3B, 4Y, VCC
+74HC08	Quad AND	A1, B1, Y1, A2, B2, Y2, GND, Y3, A3, B3, Y4, A4, B4, VCC
+74HC32	Quad OR	A1, B1, Y1, A2, B2, Y2, GND, Y3, A3, B3, Y4, A4, B4, VCC
+74HC86	Quad XOR	A1, B1, Y1, A2, B2, Y2, GND, Y3, A3, B3, Y4, A4, B4, VCC
+74HC04	Hex Inverter	1A, 1Y, 2A, 2Y, 3A, 3Y, GND, 4Y, 4A, 5Y, 5A, 6Y, 6A, VCC
+74HC75	4-bit latch	#1Q, 1D, 2D, LE34, VCC, 3D, 4D, #4Q, 4Q, 3Q, #3Q, GND, LE12, #2Q, 2Q, 1Q
+74HC93	4-bit binary counter	#CP1, MR1, MR2, NC, VCC, NC, NC, Q2, Q1, GND, Q3, Q0, NC, #CP0
+74HC283	4-bit adder	S2, B2, A2, S1, A1, B1, CIN, GND, COUT, S4, B4, A4, S3, A3, B3, VCC
+74HC595	8-bit shift register	QB, QC, QD, QE, QF, QG, QH, GND, QH', #SRCLR, SRCLK, RCLK, #OE, SER, QA, VCC
+CD4511	7-segment decoder	B, C, #LT, #BL, LE/#STROBE, D, A, GND, e, d, c, b, a, g, f, VDD
+74AHCT14            	Logic Levell Inverter/Level Shifter	1A, 1Y, 2A, 2Y, 3A, 3Y, GND, 4Y, 4A, 5Y, 5A, 6Y, 6A, VCC
+74LVC245            	8-bit Logic Level Shifter	DIR, A1, A2, A3, A4, A5, A6, A7, A8, GND, B8, B7, B6, B5, B4, B3, B2, B1, #OE, VCC
+# Sensors		
+HC-SR04 Ultrasonic Distance Sensor	Ultrasonic distance sensor	VCC, TRIG, ECHO, GND
+MLX90614	Non-contact temperature sensor	SCL/VZ, PWM/SDA, VDD, GND
+MLX90640	24x32 IR Thermal Camera	SDA, VDD, GND, SCL
+BME280	Temperature/Humidity/Pressure sensor	GND, CSB, SDI/SDA, SCK/SCL, SDO, VDD, GND, VDDIO
+BMP280	Temperature/Pressure sensor	GND, CSB, SDI/SDA, SCK/SCL, SDO, VDD, GND, VDDIO
+SHT45	Temperature/Humidity sensor	SDA, SCL, VDD, VSS
+SHT31-D 	Temperature/Humidity sensor	SDA, ADDR, ALERT, SCL, VDD, #RESET, R, GND
+TSL2591 	Light Sensor	SCL, INT, GND, NC, VDD, SDA
+MPR121	Capacitive Touch Sensor	#IRQ, SCL, SDA, ADDR, VREG, GND, REXT, ELE0, ELE1, ELE2, ELE3, ELE4, ELE5, ELE6, ELE7, ELE8, ELE9, ELE10, ELE11, VDD
+GUVA-S12SD	UV Light Sensor	ANODE, CATHODE
+LTR390	UV Light Sensor	VDD, NC, GND, SCL, INT, SDA
+APDS9960	Proximity sensor	SDA, INT, LDR, LEDK, LEDA, GND, SCL, VDD
+VL53L1X	Distance Sensor	AVDDVCSEL, AVSSVCSEL, GND, GND2, XSHUT, GND3, GPIO1, DNC, SDA, SCL, AVDD, GND4
+ADXL335	3-axis accelerometer	NC, ST, COM, NC, COM, COM, COM, ZOUT, NC, YOUT, NC, XOUT, NC, VS, VS, NC
+SGP30	Air Quality Sensor	VDD, GND, SDA, R, VDDH, SCL
+SCD-30	CO2 Sensor	VDD, GND, TX/SCL, RX/SDA, RDY, PWM, SEL
+MLX90393	3-axis Magnetometer	INT, SENB/CS, SCL/SCLK, NC, SDA/MOSI, MISO, INT/TRIG, VDD_IO, NC, NC, A1, A0, VSS, NC, VDD, NC
+HMC5883L	3-axis Magnetometer	SCL, VDD, NC, S1, NC, NC, NC, SETP, GND, C1, GND, SETC, VDDIO, NC, DRDY, SDA
+ICM-20948	9-axis intertial measurement unit	NC, NC, NC, NC, NC, NC, AUX_CL, VDDIO, SDO/AD0, REGOUT, FSYNC, INT1, VDD, NC, NC, NC, NC, GND, RESV, RESV, AUX_DA, nCS, SCL/SCLK, SDA/SDI
+C12880MA	Microspectrometer	VS, GND, VS, CLK, CASE, ST, TRIGGER, NC, EOS, VIDEO
+AS3935	Lightning Sensor	ACG, INN, INP, GND, VDD, VREG, EN_VREG, CS, SI, IRQ, I2CL/SCL, MISO, I2CD/MOSI, NC, ADD0, ADD1
+Radiation Watch Type 5	High-energy particle sensor	V+, GND, SIG, GND, NOISE
+# Microcontroller Boards		
+Arduino Uno		D0/RX, D1/TX, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, GND, AREF, A0, A1, A2, A3, A4/SDA, A5/SCL, 5V, 3V3, GND, GND, VIN
+Teensy 4.0		GND, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14/A0, 15/A1, 16/A2, 17/A3, 18/A4, 19/A5, 20/A6, 21/A7, 22/A8, 23/A9, 3.3V, GND, VIN
+Raspberry Pi 40-pin Extension Connector		3.3V, 5V, GPIO2/SDA1, 5V, GPIO3/SCL1, GND, GPIO4, GPIO14/TXD0, GND, GPIO15/RXD0, GPIO17, GPIO18, GPIO27, GND, GPIO22, GPIO23, 3.3, GPIO24, GPIO10/SPIO_MOSI, GND, GPIO9/SPI_MISO, GPIO25, GPIO11/SPI_CLK, GPIO8/SPI_CE0, GND, GPIO7/SPI_CE1, ID_SD, ID_SC, GPIO5, GND, GPIO6, GPIO12, GPIO13, GND, GPIO19, GPIO16, GPIO26, GPIO20, GND, GPIO21
+Seeed Studio XIAO SAMD21		D0/A0/DAC, D1/A1, D2/A2, D3/A3, D4/A4/SDA, D5/A5/SCL, D6/A6/TX, D7/A7/RX, D8/A8/SCL, D8/A9/MISO, D10/A10/MOSI, 3.3V, GND, 5V
+ATTINY85-20PU		D5/#RESET, D3/A3, D4/A2, GND, D0/PWM, D1/PWM, D2/A1, VCC
+ATMEGA328P		PC6, PD0, PD1, PD2, PD3, PD4, VCC, GND, PB6, PB7, PD5, PD6, PD7, PB0, PB1, PB2, PB3, PB4, PB5, AVCC, AREF, GND, PC0, PC1, PC2, PC3, PC4, PC5
+PIC16F877A		#MCLR/VPP, RA0/AN0, RA1/AN1, RA2/AN2, RA3/AN3, RA4/C1OUT, RA5/AN4/C2OUT, RE0/AN5, RE1/AN6, RE2/AN7, VDD, VSS, OSC1/CLKI, OSC2/CLKO, RCO, RC1, RC2, RC3/SCL/SCL, RD0, RD1, RD2, RD3, RC4/SDI/SDA, RC5/SDO, RC6/TX, RC7/RX, RD4, RD5, RD6, RD7, VSS, VDD, RB0/INT, RB1, RB2, RB3/PGM, RB4, RB5, RB6/PGC, RB7/PGD
+ESP8266		RESET, ADC0, ENABLE, GPIO16/WAKE, GPIO14/SCLK, GPIO12/MISO, GPIO13/MOSI, VCC, GPIO11/SDCMD, GPIO7/SDD0, GPIO9/SD2, GPIO10/SDD3, GPIO8/SDD1, GPIO6/SDCLK, GND, GPIO15/CS/TXD2, GPIO2/TXD1, GPIO0/FLASH, GPIO4/SDA, GPIO5/SCL, GPIO3/RXD0, GPIO1/TXD0
+# Connectors		
+USB 2.0 connector	Connector	VCC, D-, D+, GND
