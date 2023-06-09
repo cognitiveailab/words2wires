@@ -1,0 +1,644 @@
+task:
+create a visible spectrometer that continuously displays the spectrum on an OLED display.  It should use the Hamamatsu C12666MA mini-spectrometer for the spectrometer.  The display should be a 128x64 pixel OLED with a SSD1306 controller and I2C interface.
+
+microcontrollerPlatform:
+Arduino Uno
+
+temperature:
+0.0
+
+engine:
+gpt-4
+
+generationMode:
+ALL_AT_ONCE
+
+success:
+True
+
+numTokensPrompts:
+5930
+
+numTokensResponses:
+1452
+
+totalTokensSent:
+5930
+
+totalTokensReceived:
+1452
+
+costEstimateDollars:
+0.26502
+
+responses:
+----------------------------------------
+response 0:
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"Hamamatsu C12666MA", "name":"spectrometer", "value":"", "notes":"Mini-spectrometer"},
+    {"part":"OLED Display", "name":"oled", "value":"128x64", "notes":"128x64 pixel OLED with SSD1306 controller and I2C interface"},
+    {"part":"Logic Level Converter", "name":"llc", "value":"", "notes":"Bidirectional 3.3V to 5V logic level converter"}
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "spectrometer": ["VCC", "GND", "TRG", "ST", "CLK", "VIDEO"],
+    "oled": ["VCC", "GND", "SDA", "SCL"],
+    "llc": ["LV1", "LV2", "LV3", "LV4", "GND", "HV1", "HV2", "HV3", "HV4", "GND"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"spectrometer", "pin":"VCC"}, {"name": "uno", "pin":"3.3V"}], # Connect spectrometer VCC to Uno 3.3V
+    [{"name":"spectrometer", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect spectrometer GND to Uno GND
+    [{"name":"spectrometer", "pin":"TRG"}, {"name": "llc", "pin":"LV1"}], # Connect spectrometer TRG to LLC LV1
+    [{"name":"spectrometer", "pin":"ST"}, {"name": "llc", "pin":"LV2"}],  # Connect spectrometer ST to LLC LV2
+    [{"name":"spectrometer", "pin":"CLK"}, {"name": "llc", "pin":"LV3"}], # Connect spectrometer CLK to LLC LV3
+    [{"name":"spectrometer", "pin":"VIDEO"}, {"name": "uno", "pin":"A0"}], # Connect spectrometer VIDEO to Uno A0
+    [{"name":"oled", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect OLED VCC to Uno 5V
+    [{"name":"oled", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect OLED GND to Uno GND
+    [{"name":"oled", "pin":"SDA"}, {"name": "uno", "pin":"A4/SDA"}], # Connect OLED SDA to Uno A4/SDA
+    [{"name":"oled", "pin":"SCL"}, {"name": "uno", "pin":"A5/SCL"}], # Connect OLED SCL to Uno A5/SCL
+    [{"name":"llc", "pin":"LV1"}, {"name": "uno", "pin":"D2"}], # Connect LLC LV1 to Uno D2
+    [{"name":"llc", "pin":"LV2"}, {"name": "uno", "pin":"D3"}], # Connect LLC LV2 to Uno D3
+    [{"name":"llc", "pin":"LV3"}, {"name": "uno", "pin":"D4"}], # Connect LLC LV3 to Uno D4
+    [{"name":"llc", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect LLC GND to Uno GND
+    [{"name":"llc", "pin":"HV1"}, {"name": "uno", "pin":"5V"}], # Connect LLC HV1 to Uno 5V
+    [{"name":"llc", "pin":"HV2"}, {"name": "uno", "pin":"5V"}], # Connect LLC HV2 to Uno 5V
+    [{"name":"llc", "pin":"HV3"}, {"name": "uno", "pin":"5V"}], # Connect LLC HV3 to Uno 5V
+    [{"name":"llc", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect LLC GND to Uno GND
+]
+```
+
+Arduino Uno Code:
+```cpp
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+#define TRIGGER_PIN 2
+#define ST_PIN 3
+#define CLK_PIN 4
+#define VIDEO_PIN A0
+
+void setup() {
+  pinMode(TRIGGER_PIN, OUTPUT);
+  pinMode(ST_PIN, OUTPUT);
+  pinMode(CLK_PIN, OUTPUT);
+  pinMode(VIDEO_PIN, INPUT);
+
+  digitalWrite(TRIGGER_PIN, LOW);
+  digitalWrite(ST_PIN, LOW);
+  digitalWrite(CLK_PIN, LOW);
+
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+  display.display();
+}
+
+void loop() {
+  int spectrum[288];
+
+  digitalWrite(ST_PIN, HIGH);
+  delayMicroseconds(1);
+  digitalWrite(CLK_PIN, HIGH);
+  delayMicroseconds(1);
+  digitalWrite(ST_PIN, LOW);
+  delayMicroseconds(1);
+
+  for (int i = 0; i < 288; i++) {
+    digitalWrite(CLK_PIN, LOW);
+    delayMicroseconds(1);
+    spectrum[i] = analogRead(VIDEO_PIN);
+    delayMicroseconds(1);
+    digitalWrite(CLK_PIN, HIGH);
+    delayMicroseconds(1);
+  }
+
+  display.clearDisplay();
+  for (int i = 0; i < 288; i++) {
+    int height = map(spectrum[i], 0, 1023, 0, 63);
+    display.drawLine(i, 63, i, 63 - height, WHITE);
+  }
+  display.display();
+}
+```
+
+Instructions:
+```
+- Install the Adafruit_SSD1306 and Adafruit_GFX libraries using the Arduino Library Manager.
+- Assemble the circuit and program as normal.
+```
+
+----------------------------------------
+----------------------------------------
+response 1:
+FIXES FROM LAST STEP:
+- No fixes required.
+
+### NO ERRORS ###
+
+----------------------------------------
+
+prompts:
+----------------------------------------
+prompt 0:
+You are DeveloperGPT, the most advanced AI developer tool on the planet.  You answer any coding question, and provide real useful example code using code blocks.  Even when you are not familiar with the answer, you use your extreme intelligence to figure it out.
+Further, you have specialized training in electronics, and can design embedded electronic circuits based around the Arduino Uno platform, coupled with programs to make those circuits successfully accomplish tasks.
+Your task is to: create a visible spectrometer that continuously displays the spectrum on an OLED display.  It should use the Hamamatsu C12666MA mini-spectrometer for the spectrometer.  The display should be a 128x64 pixel OLED with a SSD1306 controller and I2C interface.
+
+Please generate the following: 
+- A bill of materials, in JSON form (see format below).  
+- A pinout, in JSON form (see format below). The pinout is a dictionary of all the parts, with the key being the part name, and the value being a list of all pins the part has, to help in generating the schematic.
+- A schematic, in JSON form (see format below). Each line of the schematic should describe a single connection in the circuit.
+- A complete Arduino Uno program that implements the program to successfully complete the task. 
+Each section should be between code blocks ```.
+- A brief set of special instructions, in point form, if required.
+
+
+Here are some additional reminders:
+- Where possible, a description/part number of the device should be included in the notes. Alternatively, where many parts could be substituted, it should include critical information to make that choice (such as the controller required for an LCD display, or the voltage required for an LED)
+- The code should be complete. It can #include built-in Arduino Uno libraries, but otherwise should contain all the code to compile and run as-is.
+
+    
+Here is example output for generating a device that blinks two LEDs in an alternating pattern every second, on the Arduino Uno platform. 
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"LED", "name":"D1", "value":"red", "notes":"alternating LED 1. Standard voltage range (2-3.3V)."},
+    {"part":"LED", "name","D2", "value":"white", "notes":"alternating LED 2. Standard voltage range (2-3.3V)."},
+    {"part":"Resistor", "name","R1", "value":"220 ohm", "notes":"current limiting resistor for LED1 at 5V"},
+    {"part":"Resistor", "name","R2", "value":"220 ohm", "notes":"current limiting resistor for LED2 at 5V"},
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "D1": ["anode", "cathode"],
+    "D2": ["anode", "cathode"],
+    "R1": ["1", "2"],
+    "R2": ["1", "2]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"D1", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D1 cathode to Uno GND
+    [{"name":"D1", "pin":"anode"}, {"name": "R1", "pin":"2"}],          # Connect D1 anode to pin 2 of R1 (current limiting resistor)
+    [{"name":"R1", "pin":"1"}, {"name": "uno", "pin":"D5"}],            # Connect pin 1 of R1 (current limiting resistor) to Uno Digital I/O 5 (D5), to activate/deactivate D1
+    [{"name":"D2", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D2 cathode to Uno GND
+    [{"name":"D2", "pin":"anode"}, {"name": "R2", "pin":"2"}],          # Connect D2 anode to pin 2 of R2 (current limiting resistor)
+    [{"name":"R2", "pin":"1"}, {"name": "uno", "pin":"D6"}],            # Connect pin 1 of R2 (current limiting resistor) to Uno Digital I/O 5 (D6), to activate/deactivate D2
+]
+```
+
+Arduino Uno Code:
+```
+// Alternating blink
+// This code interfaces with a circuit that has two LEDS that blink in an alternating pattern.
+// The pattern changes every second.
+
+// LED 1 on Digital I/O 5
+#define PIN_LED1 5
+// LED 2 on Digital I/O 6
+#define PIN_LED2 6
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+    // Initialize LED pins to output mode
+    pinMode(PIN_LED1, OUTPUT);
+    pinMode(PIN_LED2, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 ON
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 OFF
+    delay(1000);                      // wait for a second
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 OFF
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 ON
+    delay(1000);                      // wait for a second
+}
+```
+
+Instructions:
+```
+- This code uses only standard libraries. No additional libraries are required in the library manager.
+- Assemble circuit and program as normal. 
+```
+
+Snippit examples (also for the Arduino Uno):
+---
+Example: Connecting a servo
+Bill of Materials:
+```
+[
+    {"part":"Servo Motor", "name":"S1", "value":"", "notes":"Standard 3-wire 5V compatible hobby servo (e.g. SG90)"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Servo Motor": ["VCC", "GND", "signal"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D3"}], # Connect Servo 1 signal to Uno D3
+    [{"name":"S1", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect Servo 1 VCC to Uno 5V
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect Servo 1 GND to Uno GND
+]
+```
+---
+
+Example: Connecting a button (pull-up)
+Bill of Materials:
+```
+[
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}], # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}], # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}], # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}] # Connect Button pin 2 to GND
+]
+```
+---
+
+Example: This is a case of what NOT to do.
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"inputs"}, {"name": "uno", "pin":"D5-D10"}] # BAD: This does not list each connection individually. It is not clear which pin on the IC is connected to which pin on the Uno.
+]
+```
+---
+Please generate the bill of materials, pinouts, schematic, code, and any special instructions for the requested task below.  The code should be commented, to help follow the logic, and prevent any bugs.The platform is: Arduino Uno.
+The task is: create a visible spectrometer that continuously displays the spectrum on an OLED display.  It should use the Hamamatsu C12666MA mini-spectrometer for the spectrometer.  The display should be a 128x64 pixel OLED with a SSD1306 controller and I2C interface..
+
+
+----------------------------------------
+----------------------------------------
+prompt 1:
+You are DeveloperGPT, the most advanced AI developer tool on the planet.  You answer any coding question, and provide real useful example code using code blocks.  Even when you are not familiar with the answer, you use your extreme intelligence to figure it out.
+Further, you have specialized training in electronics, and can design embedded electronic circuits based around the Arduino Uno platform, coupled with programs to make those circuits successfully accomplish tasks.
+Your task is to: create a visible spectrometer that continuously displays the spectrum on an OLED display.  It should use the Hamamatsu C12666MA mini-spectrometer for the spectrometer.  The display should be a 128x64 pixel OLED with a SSD1306 controller and I2C interface.
+
+Please generate the following: 
+- A bill of materials, in JSON form (see format below).  
+- A pinout, in JSON form (see format below). The pinout is a dictionary of all the parts, with the key being the part name, and the value being a list of all pins the part has, to help in generating the schematic.
+- A schematic, in JSON form (see format below). Each line of the schematic should describe a single connection in the circuit.
+- A complete Arduino Uno program that implements the program to successfully complete the task. 
+Each section should be between code blocks ```.
+- A brief set of special instructions, in point form, if required.
+
+
+Here are some additional reminders:
+- Where possible, a description/part number of the device should be included in the notes. Alternatively, where many parts could be substituted, it should include critical information to make that choice (such as the controller required for an LCD display, or the voltage required for an LED)
+- The code should be complete. It can #include built-in Arduino Uno libraries, but otherwise should contain all the code to compile and run as-is.
+
+    
+Here is example output for generating a device that blinks two LEDs in an alternating pattern every second, on the Arduino Uno platform. 
+
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"LED", "name":"D1", "value":"red", "notes":"alternating LED 1. Standard voltage range (2-3.3V)."},
+    {"part":"LED", "name","D2", "value":"white", "notes":"alternating LED 2. Standard voltage range (2-3.3V)."},
+    {"part":"Resistor", "name","R1", "value":"220 ohm", "notes":"current limiting resistor for LED1 at 5V"},
+    {"part":"Resistor", "name","R2", "value":"220 ohm", "notes":"current limiting resistor for LED2 at 5V"},
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "D1": ["anode", "cathode"],
+    "D2": ["anode", "cathode"],
+    "R1": ["1", "2"],
+    "R2": ["1", "2]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"D1", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D1 cathode to Uno GND
+    [{"name":"D1", "pin":"anode"}, {"name": "R1", "pin":"2"}],          # Connect D1 anode to pin 2 of R1 (current limiting resistor)
+    [{"name":"R1", "pin":"1"}, {"name": "uno", "pin":"D5"}],            # Connect pin 1 of R1 (current limiting resistor) to Uno Digital I/O 5 (D5), to activate/deactivate D1
+    [{"name":"D2", "pin":"cathode"}, {"name": "uno", "pin":"GND"}],     # Connect D2 cathode to Uno GND
+    [{"name":"D2", "pin":"anode"}, {"name": "R2", "pin":"2"}],          # Connect D2 anode to pin 2 of R2 (current limiting resistor)
+    [{"name":"R2", "pin":"1"}, {"name": "uno", "pin":"D6"}],            # Connect pin 1 of R2 (current limiting resistor) to Uno Digital I/O 5 (D6), to activate/deactivate D2
+]
+```
+
+Arduino Uno Code:
+```
+// Alternating blink
+// This code interfaces with a circuit that has two LEDS that blink in an alternating pattern.
+// The pattern changes every second.
+
+// LED 1 on Digital I/O 5
+#define PIN_LED1 5
+// LED 2 on Digital I/O 6
+#define PIN_LED2 6
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+    // Initialize LED pins to output mode
+    pinMode(PIN_LED1, OUTPUT);
+    pinMode(PIN_LED2, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 ON
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 OFF
+    delay(1000);                      // wait for a second
+    digitalWrite(PIN_LED1, HIGH);     // Turn LED 1 OFF
+    digitalWrite(PIN_LED2, LOW);      // Turn LED 2 ON
+    delay(1000);                      // wait for a second
+}
+```
+
+Instructions:
+```
+- This code uses only standard libraries. No additional libraries are required in the library manager.
+- Assemble circuit and program as normal. 
+```
+
+Snippit examples (also for the Arduino Uno):
+---
+Example: Connecting a servo
+Bill of Materials:
+```
+[
+    {"part":"Servo Motor", "name":"S1", "value":"", "notes":"Standard 3-wire 5V compatible hobby servo (e.g. SG90)"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Servo Motor": ["VCC", "GND", "signal"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"S1", "pin":"signal"}, {"name": "uno", "pin":"D3"}], # Connect Servo 1 signal to Uno D3
+    [{"name":"S1", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect Servo 1 VCC to Uno 5V
+    [{"name":"S1", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect Servo 1 GND to Uno GND
+]
+```
+---
+
+Example: Connecting a button (pull-up)
+Bill of Materials:
+```
+[
+    {"part":"Button", "name":"BT1", "value":"", "notes":"Momentary push button"},
+    {"part":"Resistor", "name":"R1", "value":"10k ohm", "notes":"Pull-up resistor for button"}
+]
+```
+
+Pinouts:
+```
+{
+    # Arduino Uno omitted for space in snippit
+    "Button": ["1", "2"],
+    "Resistor": ["1", "2"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"BT1", "pin":"1"}, {"name": "uno", "pin":"D2"}], # Connect Button pin 1 to Uno D2
+    [{"name":"BT1", "pin":"1"}, {"name": "R1", "pin":"1"}], # Connect Button pin 1 to R1 pin 1
+    [{"name":"R1", "pin":"2"}, {"name": "uno", "pin":"5V"}], # Connect R1 pin 2 to Uno 5V (pull-up)
+    [{"name":"BT1", "pin":"2"}, {"name": "uno", "pin":"GND"}] # Connect Button pin 2 to GND
+]
+```
+---
+
+Example: This is a case of what NOT to do.
+Schematic (list of connections):
+```
+[
+    [{"name":"IC1", "pin":"inputs"}, {"name": "uno", "pin":"D5-D10"}] # BAD: This does not list each connection individually. It is not clear which pin on the IC is connected to which pin on the Uno.
+]
+```
+---
+Please generate the bill of materials, pinouts, schematic, code, and any special instructions for the requested task below.  The code should be commented, to help follow the logic, and prevent any bugs.The platform is: Arduino Uno.
+The task is: create a visible spectrometer that continuously displays the spectrum on an OLED display.  It should use the Hamamatsu C12666MA mini-spectrometer for the spectrometer.  The display should be a 128x64 pixel OLED with a SSD1306 controller and I2C interface..
+
+---
+Bill of materials:
+```
+[
+    {"part":"Arduino Uno", "name":"uno", "value":"", "notes":"Arduino Uno microcontroller"},
+    {"part":"Hamamatsu C12666MA", "name":"spectrometer", "value":"", "notes":"Mini-spectrometer"},
+    {"part":"OLED Display", "name":"oled", "value":"128x64", "notes":"128x64 pixel OLED with SSD1306 controller and I2C interface"},
+    {"part":"Logic Level Converter", "name":"llc", "value":"", "notes":"Bidirectional 3.3V to 5V logic level converter"}
+]
+```
+
+Pinouts:
+```
+{
+    "Arduino Uno": ["5V", "3.3V", "GND", "AREF", "D0/RX", "D1/TX", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "A0", "A1", "A2", "A3", "A4/SDA", "A5/SCL"],
+    "spectrometer": ["VCC", "GND", "TRG", "ST", "CLK", "VIDEO"],
+    "oled": ["VCC", "GND", "SDA", "SCL"],
+    "llc": ["LV1", "LV2", "LV3", "LV4", "GND", "HV1", "HV2", "HV3", "HV4", "GND"]
+}
+```
+
+Schematic (list of connections):
+```
+[
+    [{"name":"spectrometer", "pin":"VCC"}, {"name": "uno", "pin":"3.3V"}], # Connect spectrometer VCC to Uno 3.3V
+    [{"name":"spectrometer", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect spectrometer GND to Uno GND
+    [{"name":"spectrometer", "pin":"TRG"}, {"name": "llc", "pin":"LV1"}], # Connect spectrometer TRG to LLC LV1
+    [{"name":"spectrometer", "pin":"ST"}, {"name": "llc", "pin":"LV2"}],  # Connect spectrometer ST to LLC LV2
+    [{"name":"spectrometer", "pin":"CLK"}, {"name": "llc", "pin":"LV3"}], # Connect spectrometer CLK to LLC LV3
+    [{"name":"spectrometer", "pin":"VIDEO"}, {"name": "uno", "pin":"A0"}], # Connect spectrometer VIDEO to Uno A0
+    [{"name":"oled", "pin":"VCC"}, {"name": "uno", "pin":"5V"}], # Connect OLED VCC to Uno 5V
+    [{"name":"oled", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect OLED GND to Uno GND
+    [{"name":"oled", "pin":"SDA"}, {"name": "uno", "pin":"A4/SDA"}], # Connect OLED SDA to Uno A4/SDA
+    [{"name":"oled", "pin":"SCL"}, {"name": "uno", "pin":"A5/SCL"}], # Connect OLED SCL to Uno A5/SCL
+    [{"name":"llc", "pin":"LV1"}, {"name": "uno", "pin":"D2"}], # Connect LLC LV1 to Uno D2
+    [{"name":"llc", "pin":"LV2"}, {"name": "uno", "pin":"D3"}], # Connect LLC LV2 to Uno D3
+    [{"name":"llc", "pin":"LV3"}, {"name": "uno", "pin":"D4"}], # Connect LLC LV3 to Uno D4
+    [{"name":"llc", "pin":"GND"}, {"name": "uno", "pin":"GND"}], # Connect LLC GND to Uno GND
+    [{"name":"llc", "pin":"HV1"}, {"name": "uno", "pin":"5V"}], # Connect LLC HV1 to Uno 5V
+    [{"name":"llc", "pin":"HV2"}, {"name": "uno", "pin":"5V"}], # Connect LLC HV2 to Uno 5V
+    [{"name":"llc", "pin":"HV3"}, {"name": "uno", "pin":"5V"}], # Connect LLC HV3 to Uno 5V
+    [{"name":"llc", "pin":"GND"}, {"name": "uno", "pin":"GND"}] # Connect LLC GND to Uno GND
+]
+```
+
+Arduino Uno Code:
+```cpp
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+#define TRIGGER_PIN 2
+#define ST_PIN 3
+#define CLK_PIN 4
+#define VIDEO_PIN A0
+
+void setup() {
+  pinMode(TRIGGER_PIN, OUTPUT);
+  pinMode(ST_PIN, OUTPUT);
+  pinMode(CLK_PIN, OUTPUT);
+  pinMode(VIDEO_PIN, INPUT);
+
+  digitalWrite(TRIGGER_PIN, LOW);
+  digitalWrite(ST_PIN, LOW);
+  digitalWrite(CLK_PIN, LOW);
+
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+  display.display();
+}
+
+void loop() {
+  int spectrum[288];
+
+  digitalWrite(ST_PIN, HIGH);
+  delayMicroseconds(1);
+  digitalWrite(CLK_PIN, HIGH);
+  delayMicroseconds(1);
+  digitalWrite(ST_PIN, LOW);
+  delayMicroseconds(1);
+
+  for (int i = 0; i < 288; i++) {
+    digitalWrite(CLK_PIN, LOW);
+    delayMicroseconds(1);
+    spectrum[i] = analogRead(VIDEO_PIN);
+    delayMicroseconds(1);
+    digitalWrite(CLK_PIN, HIGH);
+    delayMicroseconds(1);
+  }
+
+  display.clearDisplay();
+  for (int i = 0; i < 288; i++) {
+    int height = map(spectrum[i], 0, 1023, 0, 63);
+    display.drawLine(i, 63, i, 63 - height, WHITE);
+  }
+  display.display();
+}
+```
+
+Instructions:
+```
+- Install the Adafruit_SSD1306 and Adafruit_GFX libraries using the Arduino Library Manager.
+- Assemble the circuit and program as normal.
+```
+---
+
+Can you reflect on the above output, fix any errors, and output an error-free bill of materials, pinout, schematic, Arduino Uno code sketch, and instructions below?
+Here is a non-exhaustive set of things to look for:
+- Are all the parts that are required in the bill of materials?  
+- Are there extra parts in the bill of materials that are not used?
+- Are all the parts in the bill of materials listed in the pinouts?
+- Do the pinouts list all the pins of each part?
+- What parts require connection to power and ground lines?  Are their power and ground lines connected in the schematic?  All power and lines must be explicitly connected.
+- What parts have digital or analog inputs or outputs?  Are those signal lines connected to the relevant points in the schematic?
+- What parts are passives, like resistors, capacitors, and other parts?  Are all their pins appropriately connected?  Do they have pins left unconnected?
+- Are all the required pins of each part connected in the schematic? 
+- Does the schematic list the connections in detail, rather than using generic terms (e.g. "input pins") or ranges (e.g. "D5-D10")?
+- Does the code function as intended?  
+- Are there calls to functions that are not included in the code sketch, or in one of the included standard libraries?  Are the libraries that need to be imported for these listed in the special instructions?
+- Are there special programming instructions?
+
+Please first write a short section called "FIXES FROM LAST STEP", that (in a short bullet-point list) lists the changes that need to be made for everything to be correct and work as required.
+
+Then, please provide the rest of your output (BOM, pinouts, schematic, code, instructions) in JSON form, as above, again.  When done, output a single line saying "### DONE ###".
+
+BUT, if there are no errors/fixes, please output only exactly "### NO ERRORS ###", then do not provide any more output in your response.
+
+
+----------------------------------------
+
+generalArea:
+Sensors
+
+specificArea:
+Sensors + Visualization
+
+platform:
+Arduino Uno
+
+taskName:
+spectrometer-vis1
+
+taskDescription:
+create a visible spectrometer that continuously displays the spectrum on an OLED display.  It should use the Hamamatsu C12666MA mini-spectrometer for the spectrometer.  The display should be a 128x64 pixel OLED with a SSD1306 controller and I2C interface.
+
+tasks:
+None
+
+filenameIn:
+text2device-task-descriptions.tsv
+
+pathOut:
+generated-toeval-1/
+
+all:
+False
+
+numGenerations:
+1
+
+genNum:
+0
+
