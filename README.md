@@ -112,7 +112,7 @@ A: Yes, simply by including the `Words2Wires.py` file in your repository, adding
 
 A: The prompt for device generation is here: https://github.com/cognitiveailab/words2wires/blob/417cd96033cf780e21892a0a3ae015aa2117ffcc/Words2Wires.py#L434
 
-This includes the "DeveloperGPT" prompt by [@skirano](https://twitter.com/skirano) : https://twitter.com/skirano/status/1635736107949195278
+This includes the "DeveloperGPT" prompt preamble by [@skirano](https://twitter.com/skirano) : https://twitter.com/skirano/status/1635736107949195278
 
 **Q: Where are the full text descriptions for the devices in Experiment 2 (micro25) and Experiment 3 (open generation)?**
 
